@@ -1,6 +1,9 @@
 # Production-ready Dockerfile for NestJS Backend
 FROM node:20-alpine AS builder
 
+# Install native build tools required by better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Copy package files for dependency caching
