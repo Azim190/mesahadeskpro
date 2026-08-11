@@ -1,0 +1,26 @@
+{
+  "name": "masahadesk-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Surveying Department Management System (SDMS) - Desktop Application",
+  "workspaces": [
+    "apps/desktop",
+    "apps/backend",
+    "packages/shared-types"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run dev -w apps/desktop",
+    "dev:backend": "npm run start:dev -w apps/backend",
+    "build:desktop": "npm run build -w apps/desktop",
+    "build:backend": "npm run build -w apps/backend",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "prettier": "^3.2.5",
+    "eslint": "^8.57.0",
+    "husky": "^9.0.11"
+  }
+}

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Content Security Policy commented out for browser preview testing -->
+    <!-- <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:3000"
+    /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MasahaDesk — Surveying Department Management System</title>
+    
+    <script>
+      // Fallback/Mock for window.api when running outside Electron (e.g. in browser testing)
+      if (typeof window !== 'undefined' && !window.api) {
+        console.warn('Electron window.api not found. Initializing Web Browser Mock API...');
+        
+        // Simple in-memory/localStorage stores
+        const secureStore = {
+          accessToken: '',
+          refreshToken: '',
+          userRole: 'Admin',
+          userIqama: '1000000008',
+          userFullName: 'Mock Administrator',
+        };
+
+        const defaultClients = [
+          { id: 'c1', name: 'Al-Nomac Contracting / شركة النماص للمقاولات', phoneNumber: '0512345678', email: 'info@nomac.com.sa', notes: 'Premium contractor' },
+          { id: 'c2', name: 'Red Sea Global / البحر الأحمر العالمية', phoneNumber: '0588888888', email: 'contact@redsea.sa', notes: 'Giga project developer' }
+        ];
+
+        const defaultProjects = [
+          {
+            id: 'p1',
+            tenantId: 't1111111',
+            clientId: 'c1',
+            projectNumber: 'SUR-2026-0001',
+            workType: 'SURVEY_TRANSFER',
+            status: 'IN_PROGRESS',
+            progress: 50,
+            locationLat: 24.7136,
+            locationLng: 46.6753,
+            locationText: 'Riyadh Office / مكتب الرياض',
+            notes: 'Urgent processing requested',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            clientName: 'Al-Nomac Contracting / شركة النماص للمقاولات',
+            clientPhone: '0512345678'
+          }
+        ];
+
+        const defaultProjectDetails = {
+          'p1': {
+            projectId: 'p1',
+            detailsJson: {
+              projectName: 'Subdivision of Land / فرز أرض',
+              attachments: [],
+              metadata: {
+                totalArea: '5400',
+                transactionYear: '2026',
+                decisionNumber: '123/DEC',
+                baladiRequestNumber: '123456789012'
+              },
+              auditLogs: [
+                {
+                  timestamp: new Date().toISOString(),
+                  operatorName: 'Mock Administrator',
+                  operatorIqamaId: '1000000008',
+                  action: 'Project initialized',
+                  details: 'Project registered in local DB'
+                }
+              ],
+              createdBy: 'Mock Administrator'
+            }
+          }
+        };
+
+        // Load mock state from localStorage to persist changes across routes and refreshes
+        const loadMockState = (key, defaultVal) => {
+          const val = localStorage.getItem(key);
+          if (val) {
+            try {
+              return JSON.parse(val);
+            } catch (e) {
+              // Ignore and use default
+            }
+          }
+          localStorage.setItem(key, JSON.stringify(defaultVal));
+          return defaultVal;
+        };
+
+        let clients = loadMockState('mock_db_clients', defaultClients);
+        let projects = loadMockState('mock_db_projects', defaultProjects);
+        let projectDetails = loadMockState('mock_db_project_details', defaultProjectDetails);
+        
+        // Migration: Map old 'Subdivision' workType to standard 'SURVEY_TRANSFER' enum
+        let projectsMigrated = false;
+        projects = projects.map((p) => {
+          if (p.workType === 'Subdivision') {
+            projectsMigrated = true;
+            return { ...p, workType: 'SURVEY_TRANSFER' };
+          }
+          return p;
+        });
+        if (projectsMigrated) {
+          localStorage.setItem('mock_db_projects', JSON.stringify(projects));
+        }
+
+        let syncQueue = loadMockState('mock_db_sync_queue', []);
+        const metadata = loadMockState('mock_db_metadata', { 'sync_last_pulled_at': '0' });
+
+        const saveMockState = () => {
+          localStorage.setItem('mock_db_clients', JSON.stringify(clients));
+          localStorage.setItem('mock_db_projects', JSON.stringify(projects));
+          localStorage.setItem('mock_db_project_details', JSON.stringify(projectDetails));
+          localStorage.setItem('mock_db_sync_queue', JSON.stringify(syncQueue));
+          localStorage.setItem('mock_db_metadata', JSON.stringify(metadata));
+        };
+
+        window.api = {
+          platform: 'browser',
+          ping: () => 'pong',
+          secureStorage: {
+            setItem: async (key, value) => {
+              secureStore[key] = value;
+              localStorage.setItem('sec_' + key, value);
+              return true;
+            },
+            getItem: async (key) => {
+              return secureStore[key] || localStorage.getItem('sec_' + key) || null;
+            },
+            removeItem: async (key) => {
+              delete secureStore[key];
+              localStorage.removeItem('sec_' + key);
+              return true;
+            }
+          },
+          localDb: {
+            getClients: async () => clients,
+            upsertClient: async (client, enqueueSync) => {
+              const idx = clients.findIndex(c => c.id === client.id);
+              const isUpdate = idx >= 0;
+              if (isUpdate) clients[idx] = client;
+              else clients.push(client);
+              
+              if (enqueueSync) {
+                syncQueue.push({
+                  id: Date.now() + Math.random(),
+                  entityType: 'CLIENT',
+                  entityId: client.id,
+                  operation: isUpdate ? 'UPDATE' : 'CREATE',
+                  payload: client,
+                  createdAt: new Date().toISOString()
+                });
+              }
+              saveMockState();
+            },
+            deleteClient: async (id, enqueueSync) => {
+              const hasProjects = projects.some(p => p.clientId === id);
+              if (hasProjects) {
+                throw new Error('Foreign key constraint failed: Cannot delete client with active projects');
+              }
+              const idx = clients.findIndex(c => c.id === id);
+              if (idx >= 0) clients.splice(idx, 1);
+              
+              if (enqueueSync) {
+                syncQueue.push({
+                  id: Date.now() + Math.random(),
+                  entityType: 'CLIENT',
+                  entityId: id,
+                  operation: 'DELETE',
+                  payload: { id },
+                  createdAt: new Date().toISOString()
+                });
+              }
+              saveMockState();
+            },
+            getProjects: async () => {
+              return projects.map((p) => {
+                const client = clients.find((c) => c.id === p.clientId) || {};
+                return {
+                  ...p,
+                  clientName: client.name || '',
+                  clientPhone: client.phoneNumber || '',
+                  projectName: projectDetails[p.id]?.detailsJson?.projectName || '',
+                  createdBy: projectDetails[p.id]?.detailsJson?.createdBy || ''
+                };
+              });
+            },
+            getProjectById: async (id) => {
+              const p = projects.find((proj) => proj.id === id);
+              if (!p) return null;
+              const client = clients.find((c) => c.id === p.clientId) || {};
+              return {
+                ...p,
+                clientName: client.name || '',
+                clientPhone: client.phoneNumber || '',
+                projectName: projectDetails[id]?.detailsJson?.projectName || '',
+                createdBy: projectDetails[id]?.detailsJson?.createdBy || ''
+              };
+            },
+            upsertProject: async (project, enqueueSync) => {
+              const idx = projects.findIndex(p => p.id === project.id);
+              const isUpdate = idx >= 0;
+              if (isUpdate) projects[idx] = { ...projects[idx], ...project };
+              else projects.push(project);
+              
+              if (enqueueSync) {
+                syncQueue.push({
+                  id: Date.now() + Math.random(),
+                  entityType: 'PROJECT',
+                  entityId: project.id,
+                  operation: isUpdate ? 'UPDATE' : 'CREATE',
+                  payload: projects.find(p => p.id === project.id),
+                  createdAt: new Date().toISOString()
+                });
+              }
+              saveMockState();
+            },
+            deleteProject: async (id, enqueueSync) => {
+              const idx = projects.findIndex(p => p.id === id);
+              if (idx >= 0) projects.splice(idx, 1);
+              if (projectDetails[id]) delete projectDetails[id];
+              
+              if (enqueueSync) {
+                syncQueue.push({
+                  id: Date.now() + Math.random(),
+                  entityType: 'PROJECT',
+                  entityId: id,
+                  operation: 'DELETE',
+                  payload: { id },
+                  createdAt: new Date().toISOString()
+                });
+              }
+              saveMockState();
+            },
+            getProjectDetails: async (projectId) => projectDetails[projectId] || null,
+            upsertProjectDetails: async (details, enqueueSync) => {
+              projectDetails[details.projectId] = details;
+              if (enqueueSync) {
+                syncQueue.push({
+                  id: Date.now() + Math.random(),
+                  entityType: 'PROJECT_DETAILS',
+                  entityId: details.projectId,
+                  operation: 'UPDATE',
+                  payload: details,
+                  createdAt: new Date().toISOString()
+                });
+              }
+              saveMockState();
+            },
+            getSyncQueue: async () => syncQueue,
+            updateSyncQueueStatus: async (id, status, attempts) => {
+              const item = syncQueue.find(q => q.id === id);
+              if (item) {
+                item.status = status;
+                item.attempts = attempts;
+                saveMockState();
+              }
+            },
+            deleteSyncQueueItem: async (id) => {
+              const idx = syncQueue.findIndex(q => q.id === id);
+              if (idx >= 0) {
+                syncQueue.splice(idx, 1);
+                saveMockState();
+              }
+            },
+            getMetadata: async (key) => metadata[key] || null,
+            setMetadata: async (key, value) => {
+              metadata[key] = value;
+              saveMockState();
+            },
+            saveAttachment: async (fileName, fileBuffer, projectId, projectName) => {
+              if (!window.mockAttachments) {
+                window.mockAttachments = {};
+              }
+              window.mockAttachments[fileName] = fileBuffer;
+
+              try {
+                // Convert ArrayBuffer to Base64 string
+                let binary = '';
+                const bytes = new Uint8Array(fileBuffer);
+                const len = bytes.byteLength;
+                for (let i = 0; i < len; i++) {
+                  binary += String.fromCharCode(bytes[i]);
+                }
+                const fileBase64 = window.btoa(binary);
+
+                const res = await fetch('http://localhost:3000/attachments/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    fileName,
+                    fileBase64,
+                    projectId,
+                    projectName
+                  })
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  return data;
+                }
+              } catch (e) {
+                console.warn('Backend upload failed, falling back to mock: ', e);
+              }
+
+              return {
+                id: Math.random().toString(),
+                fileName: fileName,
+                filePath: '/mock/path/' + fileName,
+                sizeBytes: fileBuffer.byteLength,
+                uploadedAt: new Date().toISOString()
+              };
+            },
+            deleteAttachment: async () => {},
+            openAttachment: async (filePath) => {
+              const fileName = filePath.split(/[\\/]/).pop() || 'attachment';
+              const fileBuffer = window.mockAttachments ? window.mockAttachments[fileName] : null;
+              
+              let blob;
+              if (fileBuffer) {
+                blob = new Blob([fileBuffer], { type: 'application/octet-stream' });
+              } else {
+                blob = new Blob(['Mock file content preview'], { type: 'text/plain' });
+              }
+              
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName.includes('.') ? fileName : fileName + '.txt';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            },
+            openOneDriveFolder: async (projectName) => {
+              try {
+                const res = await fetch('http://localhost:3000/attachments/open-folder', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ projectName })
+                });
+                if (res.ok) {
+                  return;
+                }
+              } catch (e) {
+                console.warn('Backend open-folder failed, falling back to web link: ', e);
+              }
+              alert('Notice / تنبيه:\n\nYou are running the app inside a web browser preview. Automated background file syncing to local folders requires the desktop Electron app (npm run dev:desktop).\n\nWe will now open the OneDrive link in a new tab so you can view or drag-and-drop files manually.');
+              window.open('https://1drv.ms/f/c/0a257d75be9315f7/IgClaRD1xDsZQrZQWBjQrqSxAcg5Cj0LnhDtzkCJ11pabj0?e=RmZiBI', '_blank');
+            }
+          },
+          dialog: {
+            confirm: async (options) => {
+              return confirm(options.message);
+            }
+          }
+        };
+      }
+    </script>
+  </head>
+  <body class="bg-background text-foreground">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

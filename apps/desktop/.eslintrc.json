@@ -1,0 +1,23 @@
+{
+  "extends": "../../.eslintrc.json",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["src/renderer/**/*"],
+      "env": {
+        "browser": true,
+        "node": false
+      }
+    },
+    {
+      "files": ["src/main/**/*", "src/preload/**/*"],
+      "env": {
+        "browser": false,
+        "node": true
+      }
+    }
+  ]
+}

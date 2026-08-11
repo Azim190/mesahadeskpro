@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "surveyTransfer": "تنزيل أو رفع مساحي",
+    "reports": "التقارير",
+    "surveySketch": "كروكي مساحي",
+    "baladiTransactions": "معاملات منصة بلدي",
+    "surveyDecision": "قرار مساحي",
+    "priceOffers": "عروض الأسعار",
+    "contracts": "عقود الخدمات",
+    "settings": "الإعدادات",
+    "users": "إدارة المستخدمين",
+    "general": "الإعدادات العامة",
+    "support": "الدعم الفني"
+  },
+  "common": {
+    "language": "اللغة",
+    "theme": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "status": "الحالة",
+    "progress": "نسبة الإنجاز",
+    "searchPlaceholder": "البحث بالاسم، العميل، أو رقم المشروع...",
+    "addProject": "إضافة مشروع",
+    "logout": "تسجيل الخروج",
+    "profile": "الملف الشخصي",
+    "noProjects": "لا توجد مشاريع مطابقة للبحث",
+    "allWorkTypes": "كل أنواع العمل",
+    "allStatuses": "كل الحالات",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "client": "العميل",
+    "projectNum": "رقم المشروع",
+    "dateAdded": "تاريخ الإضافة",
+    "selectWorkType": "اختر نوع المشروع",
+    "chooseTypeMsg": "الرجاء اختيار نوع العمل للمشروع الجديد:",
+    "actions": "الإجراءات",
+    "view": "عرض",
+    "export": "تصدير",
+    "clientName": "اسم العميل",
+    "clientPhone": "رقم جوال العميل",
+    "invalidPhone": "تنسيق الرقم غير صالح. يجب أن يكون رقم جوال سعودي (مثال: 05xxxxxxxx أو +9665xxxxxxxx)",
+    "projectNumError": "رقم المشروع هذا مستخدم بالفعل.",
+    "attachments": "المرفقات",
+    "dragDropMsg": "اسحب وأسقط الملفات هنا، أو انقر لرفعها",
+    "clientDirectory": "دليل العملاء",
+    "projectCount": "عدد المشاريع",
+    "projects": "المشاريع",
+    "clients": "العملاء",
+    "projectName": "اسم المشروع",
+    "locationText": "الموقع / العنوان",
+    "latitude": "خط العرض (Latitude)",
+    "longitude": "خط الطول (Longitude)",
+    "notes": "الملاحظات",
+    "newClient": "تسجيل عميل جديد"
+  },
+  "status": {
+    "pending": "معلق",
+    "underProcedure": "تحت الاجراء",
+    "inProgress": "جاري",
+    "completed": "مكتمل"
+  },
+  "routes": {
+    "login": "صفحة تسجيل الدخول",
+    "verifyOtp": "صفحة التحقق من رمز OTP",
+    "projectDetails": "صفحة تفاصيل المشروع"
+  },
+  "fields": {
+    "letterNumber": "رقم الخطاب",
+    "letterDate": "تاريخ الخطاب",
+    "requestingAuthority": "الجهة الطالبة",
+    "reportType": "نوع التقرير",
+    "inspectorName": "اسم المفتش",
+    "landUse": "استخدام الأرض",
+    "totalArea": "المساحة الإجمالية (م²)",
+    "baladiRequestNumber": "رقم طلب منصة بلدي",
+    "transactionYear": "سنة المعاملة",
+    "decisionNumber": "رقم القرار المساحي",
+    "decisionDate": "تاريخ القرار المساحي",
+    "issuerName": "اسم مصدر القرار",
+    "contractValue": "قيمة العقد (ر.س)",
+    "contractNumber": "رقم العقد",
+    "paymentTerms": "شروط وتوزيع الدفعات",
+    "paidAmount": "المبلغ المدفوع (ر.س)",
+    "remainingAmount": "المبلغ المتبقي (ر.س)",
+    "paymentPercentage": "نسبة السداد (%)",
+    "totalPaid": "إجمالي المدفوع",
+    "totalRemaining": "إجمالي المتبقي"
+  },
+  "authorities": {
+    "Municipality": "الأمانة / البلدية",
+    "Ministry": "الوزارة",
+    "Private": "جهة خاصة"
+  },
+  "reportTypes": {
+    "Structural": "تقرير إنشائي",
+    "Soil": "تقرير فحص التربة",
+    "Boundary": "تقرير معاينة الحدود"
+  },
+  "landUses": {
+    "Residential": "سكني",
+    "Commercial": "تجاري",
+    "Industrial": "صناعي"
+  },
+  "steps": {
+    "SURVEY_TRANSFER": {
+      "step1": "تم استلام الخطاب",
+      "step2": "تم الرفع المساحي للموقع",
+      "step3": "تم إعداد المسودة",
+      "step4": "اكتملت المراجعة والتدقيق",
+      "step5": "تم إصدار الخطاب النهائي"
+    },
+    "REPORTS": {
+      "step1": "تم تسجيل الطلب",
+      "step2": "تمت معاينة الموقع ميدانياً",
+      "step3": "تمت كتابة التقرير الفني",
+      "step4": "تم توقيع وتسليم التقرير للعميل"
+    },
+    "SURVEY_SKETCH": {
+      "step1": "مراجعة المستندات والصكوك",
+      "step2": "القياسات والرفع الميداني",
+      "step3": "رسم المخطط (CAD)",
+      "step4": "تم اعتماد وطباعة الكروكي"
+    },
+    "BALADI_TRANSACTION": {
+      "step1": "تم بدء المعاملة بالنظام",
+      "step2": "المراجعة الهندسية والتدقيق",
+      "step3": "موافقة البلدية الفرعية",
+      "step4": "سداد الرسوم البلدية",
+      "step5": "تم إصدار الرخصة بنجاح"
+    },
+    "SURVEY_DECISION": {
+      "step1": "تقديم طلب القرار",
+      "step2": "التحقق من الحدود والمجاورات",
+      "step3": "مراجعة اللجنة الفنية",
+      "step4": "كتابة مسودة قرار اللجنة",
+      "step5": "توقيع وتسجيل القرار النهائي"
+    },
+    "PRICE_OFFERS": {
+      "step1": "تم استلام الطلب وإعداد المسودة",
+      "step2": "تمت مراجعة التسعيرة هندسياً",
+      "step3": "تم إرسال عرض السعر للعميل",
+      "step4": "تمت موافقة العميل والترسية"
+    },
+    "CONTRACTS": {
+      "step1": "تم إعداد وصياغة مسودة العقد",
+      "step2": "تمت مراجعة العميل والموافقة",
+      "step3": "تم توقيع العقد وسداد الدفعة الأولى",
+      "step4": "جاري التنفيذ والأعمال المساحية",
+      "step5": "تم التسليم النهائي وإغلاق العقد"
+    }
+  }
+}

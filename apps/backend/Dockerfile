@@ -1,0 +1,43 @@
+# Production-ready Dockerfile for NestJS Backend
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files for dependency caching
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY packages/shared-types/package*.json ./packages/shared-types/
+
+# Install build dependencies
+RUN npm ci
+
+# Copy application source
+COPY packages/shared-types/ ./packages/shared-types/
+COPY apps/backend/ ./apps/backend/
+
+# Compile package targets
+RUN npm run build -w packages/shared-types
+RUN npm run build -w apps/backend
+
+# Production Runner
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY packages/shared-types/package*.json ./packages/shared-types/
+
+# Install production-only packages
+RUN npm ci --omit=dev
+
+# Copy built code from builder
+COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV NODE_ENV=production
+
+CMD ["npm", "run", "start:prod", "-w", "apps/backend"]

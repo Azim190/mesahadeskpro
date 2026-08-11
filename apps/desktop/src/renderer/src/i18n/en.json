@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "surveyTransfer": "Survey Transfer",
+    "reports": "Reports",
+    "surveySketch": "Survey Sketch",
+    "baladiTransactions": "Baladi Transactions",
+    "surveyDecision": "Survey Decision",
+    "priceOffers": "Price Offers",
+    "contracts": "Contracts",
+    "settings": "Settings",
+    "users": "User Management",
+    "general": "General Settings",
+    "support": "Support"
+  },
+  "common": {
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "status": "Status",
+    "progress": "Progress",
+    "searchPlaceholder": "Search by project, client, or number...",
+    "addProject": "Add Project",
+    "logout": "Logout",
+    "profile": "Profile",
+    "noProjects": "No projects found",
+    "allWorkTypes": "All Work Types",
+    "allStatuses": "All Statuses",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "client": "Client",
+    "projectNum": "Project #",
+    "dateAdded": "Date Added",
+    "selectWorkType": "Select Project Work Type",
+    "chooseTypeMsg": "Please choose a work type for the new project:",
+    "actions": "Actions",
+    "view": "View",
+    "export": "Export",
+    "clientName": "Client Name",
+    "clientPhone": "Client Phone Number",
+    "invalidPhone": "Invalid phone format. Must be a Saudi mobile number (e.g. 05xxxxxxxx or +9665xxxxxxxx)",
+    "projectNumError": "This project number is already in use.",
+    "attachments": "Attachments",
+    "dragDropMsg": "Drag & drop files here, or click to upload",
+    "clientDirectory": "Clients Directory",
+    "projectCount": "Project Count",
+    "projects": "Projects",
+    "clients": "Clients",
+    "projectName": "Project Name",
+    "locationText": "Location Name / Address",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "notes": "Notes",
+    "newClient": "Register New Client"
+  },
+  "status": {
+    "pending": "Pending",
+    "underProcedure": "Under Procedure",
+    "inProgress": "In Progress",
+    "completed": "Completed"
+  },
+  "routes": {
+    "login": "Login Page",
+    "verifyOtp": "OTP Verification Page",
+    "projectDetails": "Project Details Page"
+  },
+  "fields": {
+    "letterNumber": "Letter Number",
+    "letterDate": "Letter Date",
+    "requestingAuthority": "Requesting Authority",
+    "reportType": "Report Type",
+    "inspectorName": "Inspector Name",
+    "landUse": "Land Use",
+    "totalArea": "Total Area (sqm)",
+    "baladiRequestNumber": "Baladi Request Number",
+    "transactionYear": "Transaction Year",
+    "decisionNumber": "Decision Number",
+    "decisionDate": "Decision Date",
+    "issuerName": "Issuer Name",
+    "contractValue": "Contract Amount (SAR)",
+    "contractNumber": "Contract Number",
+    "paymentTerms": "Payment Terms & Schedule",
+    "paidAmount": "Paid Amount (SAR)",
+    "remainingAmount": "Remaining Amount (SAR)",
+    "paymentPercentage": "Payment Percentage (%)",
+    "totalPaid": "Total Paid",
+    "totalRemaining": "Total Remaining"
+  },
+  "authorities": {
+    "Municipality": "Municipality",
+    "Ministry": "Ministry",
+    "Private": "Private"
+  },
+  "reportTypes": {
+    "Structural": "Structural",
+    "Soil": "Soil",
+    "Boundary": "Boundary"
+  },
+  "landUses": {
+    "Residential": "Residential",
+    "Commercial": "Commercial",
+    "Industrial": "Industrial"
+  },
+  "steps": {
+    "SURVEY_TRANSFER": {
+      "step1": "Letter Received",
+      "step2": "Site Surveyed",
+      "step3": "Draft Prepared",
+      "step4": "Review Completed",
+      "step5": "Final Letter Issued"
+    },
+    "REPORTS": {
+      "step1": "Request Registered",
+      "step2": "Site Inspection",
+      "step3": "Report Drafted",
+      "step4": "Report Signed & Delivered"
+    },
+    "SURVEY_SKETCH": {
+      "step1": "Document Review",
+      "step2": "Field Measurements",
+      "step3": "CAD Drafting",
+      "step4": "Approved & Printed"
+    },
+    "BALADI_TRANSACTION": {
+      "step1": "Transaction Initiated",
+      "step2": "Engineering Review",
+      "step3": "Municipality Approval",
+      "step4": "Fee Payment",
+      "step5": "License Issued"
+    },
+    "SURVEY_DECISION": {
+      "step1": "Application Filed",
+      "step2": "Border Verification",
+      "step3": "Committee Review",
+      "step4": "Decision Drafted",
+      "step5": "Decision Signed & Registered"
+    },
+    "PRICE_OFFERS": {
+      "step1": "Request & Draft Prepared",
+      "step2": "Engineering Price Review",
+      "step3": "Offer Sent to Client",
+      "step4": "Client Approved & Contracted"
+    },
+    "CONTRACTS": {
+      "step1": "Draft Prepared & Formulated",
+      "step2": "Client Review & Agreement",
+      "step3": "Contract Signed & Advance Paid",
+      "step4": "Execution & Surveying in Progress",
+      "step5": "Final Handover & Contract Closed"
+    }
+  }
+}

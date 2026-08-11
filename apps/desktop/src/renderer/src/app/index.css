@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dar Makkah (DMC) Corporate Light Mode - Deep Navy & Sand Beige Gold */
+    --background: 38 30% 93%; /* Warm Sand Beige Cream #f5efe6 */
+    --foreground: 209 65% 12%; /* Deep Corporate Navy #0b2034 */
+
+    --card: 0 0% 100%; /* Pure White / Soft Cream Card */
+    --card-foreground: 209 65% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 209 65% 12%;
+
+    --primary: 209 65% 12%; /* Deep Corporate Navy #0b2034 */
+    --primary-foreground: 38 45% 95%; /* Light Sand Cream #f9f5ef */
+
+    --secondary: 38 35% 87%; /* Warm Sand Accent #ebdcc7 */
+    --secondary-foreground: 209 65% 12%;
+
+    --muted: 38 30% 88%; /* Muted Sand #eadfd0 */
+    --muted-foreground: 209 25% 36%; /* Muted Navy Slate #435565 */
+
+    --accent: 38 45% 72%; /* Sand Beige Gold Accent #d8c4a5 */
+    --accent-foreground: 209 65% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 38 25% 82%; /* Sand Border #dad0c1 */
+    --input: 38 25% 82%;
+    --ring: 209 65% 12%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dar Makkah (DMC) Corporate Dark Mode - Midnight Navy & Sand Gold */
+    --background: 209 65% 8%; /* Deep Midnight Navy #071524 */
+    --foreground: 38 30% 93%; /* Sand Cream #f5efe6 */
+
+    --card: 209 64% 13%; /* Rich Navy Blue Card #0c2136 */
+    --card-foreground: 38 30% 96%;
+
+    --popover: 209 64% 13%;
+    --popover-foreground: 38 30% 96%;
+
+    --primary: 38 45% 78%; /* Luxury Sand Gold #dfceb3 */
+    --primary-foreground: 209 65% 8%; /* Midnight Navy text on Gold */
+
+    --secondary: 209 55% 18%; /* Dark Navy #122d47 */
+    --secondary-foreground: 38 30% 93%;
+
+    --muted: 209 55% 18%;
+    --muted-foreground: 209 20% 68%; /* Soft Navy Gray #9db1c3 */
+
+    --accent: 38 45% 78%; /* Sand Gold Accent #dfceb3 */
+    --accent-foreground: 209 65% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 209 50% 22%; /* Dark Navy Border #193a59 */
+    --input: 209 50% 22%;
+    --ring: 38 45% 78%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Tajawal', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Tajawal', 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+  }
+}
+
+/* Custom Geographic Surveying Coordinate Grid Background Pattern */
+.survey-grid-bg {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(120, 100, 50, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(120, 100, 50, 0.04) 1px, transparent 1px);
+}
+.dark .survey-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(243, 168, 44, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(243, 168, 44, 0.03) 1px, transparent 1px);
+}
+
+/* Staggered page load entries */
+@keyframes reveal-stagger {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-reveal {
+  opacity: 0;
+  animation: reveal-stagger 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-75 { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* Ensure smooth transitions for color variables */
+body, div, sidebar, header, main, nav, button, input, select, textarea, span, p, a {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Glow ring effects */
+.glow-accent {
+  box-shadow: 0 0 15px rgba(243, 168, 44, 0.15);
+}
+.dark .glow-accent {
+  box-shadow: 0 0 25px rgba(243, 168, 44, 0.25);
+}

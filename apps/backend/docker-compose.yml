@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: masahadesk-db
+    restart: always
+    environment:
+      POSTGRES_USER: masaha_user
+      POSTGRES_PASSWORD: MasahaPassword123
+      POSTGRES_DB: masahadesk
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: masahadesk-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
+    container_name: masahadesk-backend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://masaha_user:MasahaPassword123@postgres:5432/masahadesk
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: production_jwt_secret_key_change_me
+      SMS_GATEWAY: mock # Fallback to Mock gateway. Set to 'taqnyat' for production.
+      TAQNYAT_API_KEY: ''
+      TAQNYAT_SENDER: ''
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  pgdata:
+  redisdata:
