@@ -27,16 +27,10 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY apps/backend/package*.json ./apps/backend/
-COPY packages/shared-types/package*.json ./packages/shared-types/
-
-# Install production-only packages
-RUN npm ci --omit=dev
-
-# Copy built code from builder
-COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/shared-types ./packages/shared-types
+COPY --from=builder /app/apps/backend ./apps/backend
 
 EXPOSE 3000
 

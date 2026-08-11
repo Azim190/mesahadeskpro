@@ -31,7 +31,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy node_modules & build artifacts from builder
+# Copy package.json, node_modules & build artifacts from builder
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared-types ./packages/shared-types
 COPY --from=builder /app/apps/backend ./apps/backend
