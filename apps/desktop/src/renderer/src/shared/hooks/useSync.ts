@@ -43,6 +43,14 @@ interface ProjectDetailsPayload {
   updatedAt: string;
 }
 
+const getApiUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
+    return window.location.origin;
+  }
+  return 'http://localhost:3000';
+};
+
 export function useSync() {
   const [status, setStatus] = useState<SyncStatus>({
     isOnline: false,
@@ -55,7 +63,7 @@ export function useSync() {
 
   const checkConnection = useCallback(async (): Promise<boolean> => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       
@@ -92,7 +100,7 @@ export function useSync() {
     setStatus((prev) => ({ ...prev, isOnline: true, isSyncing: true }));
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
 
       // 1. PUSH local changes
       const queue = (await window.api.localDb.getSyncQueue()) as SyncQueueItemDto[];

@@ -41,6 +41,14 @@ import {
   ClipboardList,
 } from 'lucide-react';
 
+const getApiUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
+    return window.location.origin;
+  }
+  return 'http://localhost:3000';
+};
+
 // Progress Color Function based on Section 6 bands
 export function getProgressColor(progress: number): string {
   if (progress <= 15) return 'bg-red-500'; // Red
@@ -5138,7 +5146,7 @@ export function SettingsUsersPage(): React.ReactElement {
       }
 
       const token = await window.api.secureStorage.getItem('accessToken');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -5187,7 +5195,7 @@ export function SettingsUsersPage(): React.ReactElement {
 
     try {
       const token = await window.api.secureStorage.getItem('accessToken');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/users`, {
         method: 'POST',
         headers: {
@@ -5232,7 +5240,7 @@ export function SettingsUsersPage(): React.ReactElement {
 
     try {
       const token = await window.api.secureStorage.getItem('accessToken');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -5274,7 +5282,7 @@ export function SettingsUsersPage(): React.ReactElement {
     if (confirmed) {
       try {
         const token = await window.api.secureStorage.getItem('accessToken');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiUrl = getApiUrl();
         const response = await fetch(`${apiUrl}/users/${user.id}/deactivate`, {
           method: 'PATCH',
           headers: {
@@ -5305,7 +5313,7 @@ export function SettingsUsersPage(): React.ReactElement {
     if (confirmed) {
       try {
         const token = await window.api.secureStorage.getItem('accessToken');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiUrl = getApiUrl();
         const response = await fetch(`${apiUrl}/users/${user.id}`, {
           method: 'DELETE',
           headers: {
@@ -5869,7 +5877,7 @@ export function LoginPage(): React.ReactElement {
 
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -6073,7 +6081,7 @@ export function VerifyOtpPage(): React.ReactElement {
 
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -6103,7 +6111,7 @@ export function VerifyOtpPage(): React.ReactElement {
     setError(null);
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
