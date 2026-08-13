@@ -16,7 +16,7 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY packages/shared-types/package*.json ./packages/shared-types/
 
 # Install build dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install
 
 # Copy application source
 COPY packages/shared-types/ ./packages/shared-types/

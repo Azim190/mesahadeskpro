@@ -16,8 +16,8 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/desktop/package*.json ./apps/desktop/
 COPY packages/shared-types/package*.json ./packages/shared-types/
 
-# Install dependencies (skipping electron binary download for speed & low memory footprint)
-RUN npm install --legacy-peer-deps
+# Install dependencies
+RUN npm install
 
 # Copy full source
 COPY . .
