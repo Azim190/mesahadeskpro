@@ -4,8 +4,9 @@ FROM node:20-alpine AS builder
 # Install native C/C++ build toolchain (gcc, g++, make, python3, sqlite-dev)
 RUN apk add --no-cache python3 build-base sqlite-dev
 
-# Set Python environment variable for node-gyp
+# Set environment variables
 ENV PYTHON=/usr/bin/python3
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 WORKDIR /app
 
@@ -15,7 +16,7 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY packages/shared-types/package*.json ./packages/shared-types/
 
 # Install build dependencies
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy application source
 COPY packages/shared-types/ ./packages/shared-types/

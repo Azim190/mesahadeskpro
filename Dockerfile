@@ -4,8 +4,9 @@ FROM node:20-alpine AS builder
 # Install native C/C++ build toolchain (gcc, g++, make, python3, sqlite-dev)
 RUN apk add --no-cache python3 build-base sqlite-dev
 
-# Set Python environment variable for node-gyp
+# Set environment variables to optimize Docker build speed and skip Electron desktop binary download
 ENV PYTHON=/usr/bin/python3
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 WORKDIR /app
 
@@ -15,8 +16,8 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/desktop/package*.json ./apps/desktop/
 COPY packages/shared-types/package*.json ./packages/shared-types/
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (skipping electron binary download for speed & low memory footprint)
+RUN npm install --legacy-peer-deps
 
 # Copy full source
 COPY . .
