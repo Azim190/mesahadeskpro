@@ -10,9 +10,12 @@ import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 
 // Resolve static directory for Web App frontend
-const staticWebPath = join(__dirname, '..', 'public', 'web');
-const altStaticWebPath = join(__dirname, '..', '..', 'desktop', 'out', 'renderer');
-const targetStaticPath = existsSync(staticWebPath) ? staticWebPath : altStaticWebPath;
+const candidateStaticPaths = [
+  join(process.cwd(), 'apps', 'desktop', 'out', 'renderer'),
+  join(__dirname, '..', '..', 'desktop', 'out', 'renderer'),
+  join(__dirname, '..', 'public', 'web'),
+];
+const targetStaticPath = candidateStaticPaths.find((p) => existsSync(p)) || candidateStaticPaths[0];
 
 @Module({
   imports: [
