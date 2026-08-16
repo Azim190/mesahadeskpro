@@ -40,6 +40,8 @@ import {
   MessageCircle,
   Coins,
   ClipboardList,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 const getApiUrl = (): string => {
@@ -127,6 +129,143 @@ export interface ProjectItem {
 }
 
 // Client interface
+// Beautiful In-App Confirmation Modal Component (Replaces browser popups)
+export interface ConfirmModalProps {
+  isOpen: boolean;
+  title?: string;
+  message?: string;
+  description?: string;
+  itemName?: string;
+  itemBadge?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'danger' | 'warning' | 'info';
+  isLoading?: boolean;
+  onConfirm: () => void | Promise<void>;
+  onClose: () => void;
+}
+
+export function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  description,
+  itemName,
+  itemBadge,
+  confirmLabel,
+  cancelLabel,
+  variant = 'danger',
+  isLoading = false,
+  onConfirm,
+  onClose,
+}: ConfirmModalProps): React.ReactElement | null {
+  const { i18n } = useTranslation();
+  const isRtl = i18n.language === 'ar';
+
+  if (!isOpen) return null;
+
+  const defaultTitle = variant === 'danger'
+    ? (isRtl ? 'تأكيد الحذف النهائي' : 'Confirm Deletion')
+    : (isRtl ? 'تأكيد الإجراء' : 'Confirm Action');
+
+  const defaultMessage = variant === 'danger'
+    ? (isRtl ? 'هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.' : 'Are you sure you want to delete this item? This action cannot be undone.')
+    : (isRtl ? 'هل ترغب في تأكيد المتابعة؟' : 'Are you sure you want to proceed?');
+
+  const defaultConfirmLabel = variant === 'danger'
+    ? (isRtl ? 'حذف نهائي' : 'Delete Permanently')
+    : (isRtl ? 'تأكيد' : 'Confirm');
+
+  const defaultCancelLabel = isRtl ? 'إلغاء' : 'Cancel';
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
+      <div 
+        className="bg-card text-card-foreground border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in p-6 space-y-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Icon & Title Header */}
+        <div className="flex items-start gap-4">
+          <div className={`p-3.5 rounded-2xl flex-shrink-0 ${
+            variant === 'danger'
+              ? 'bg-rose-500/15 text-rose-500 ring-4 ring-rose-500/10'
+              : 'bg-amber-500/15 text-amber-500 ring-4 ring-amber-500/10'
+          }`}>
+            {variant === 'danger' ? (
+              <Trash2 className="h-6 w-6" />
+            ) : (
+              <AlertTriangle className="h-6 w-6" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h3 className="text-base font-bold text-foreground">
+              {title || defaultTitle}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {message || defaultMessage}
+            </p>
+          </div>
+        </div>
+
+        {/* Item Info Box (if provided) */}
+        {(itemName || itemBadge || description) && (
+          <div className="p-3.5 bg-muted/40 border border-border/60 rounded-xl space-y-1.5 text-xs">
+            {itemBadge && (
+              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-primary/10 text-primary">
+                {itemBadge}
+              </span>
+            )}
+            {itemName && (
+              <div className="font-bold text-foreground truncate">
+                {itemName}
+              </div>
+            )}
+            {description && (
+              <p className="text-muted-foreground text-[11px]">
+                {description}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 pt-2 font-sans">
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold border border-border bg-background hover:bg-accent text-foreground rounded-xl transition-all disabled:opacity-50"
+          >
+            {cancelLabel || defaultCancelLabel}
+          </button>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onConfirm}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50 ${
+              variant === 'danger'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{isRtl ? 'جاري المعالجة...' : 'Processing...'}</span>
+              </>
+            ) : (
+              <>
+                {variant === 'danger' && <Trash2 className="h-3.5 w-3.5" />}
+                <span>{confirmLabel || defaultConfirmLabel}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export interface ClientItem {
   id: string;
   tenantId: string;
@@ -2158,19 +2297,15 @@ function ClientsDirectoryView() {
     return projects.filter((p) => p.clientId === clientId).length;
   };
 
-  const handleDeleteClient = async (clientId: string) => {
-    const confirmMsg = isRtl
-      ? 'هل أنت متأكد من حذف هذا العميل؟'
-      : 'Are you sure you want to delete this client?';
-    const confirmed = await window.api.dialog.confirm({
-      message: confirmMsg,
-      title: isRtl ? 'تأكيد الحذف' : 'Confirm Delete',
-      buttons: isRtl ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (!confirmed) return;
+  const [deleteClientTarget, setDeleteClientTarget] = useState<ClientItem | null>(null);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
 
+  const handleDeleteClient = async () => {
+    if (!deleteClientTarget) return;
+    setIsDeletingClient(true);
     try {
-      await window.api.localDb.deleteClient(clientId, true);
+      await window.api.localDb.deleteClient(deleteClientTarget.id, true);
+      setDeleteClientTarget(null);
       loadData();
     } catch (err) {
       console.error(err);
@@ -2178,6 +2313,8 @@ function ClientsDirectoryView() {
         ? 'لا يمكن حذف العميل بسبب وجود مشاريع نشطة مرتبطة به / Cannot delete client due to active/linked projects'
         : 'Cannot delete client due to active/linked projects';
       alert(errorMsg);
+    } finally {
+      setIsDeletingClient(false);
     }
   };
 
@@ -2289,7 +2426,7 @@ function ClientsDirectoryView() {
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteClient(client.id)}
+                    onClick={() => setDeleteClientTarget(client)}
                     className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                     title={isRtl ? 'حذف العميل' : 'Delete Client'}
                   >
@@ -2547,24 +2684,22 @@ function ProjectListView({ workTypeFilter }: { workTypeFilter?: string }) {
     });
   };
 
-  const handleDeleteProject = async (projectId: string) => {
-    const confirmMsg = i18n.language === 'ar'
-      ? 'هل أنت متأكد من حذف هذا المشروع؟ لا يمكن التراجع عن هذه العملية.'
-      : 'Are you sure you want to delete this project? This cannot be undone.';
-    const confirmed = await window.api.dialog.confirm({
-      message: confirmMsg,
-      title: i18n.language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete',
-      buttons: i18n.language === 'ar' ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (!confirmed) return;
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<ProjectItem | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
 
+  const handleDeleteProject = async () => {
+    if (!deleteProjectTarget) return;
+    setIsDeletingProject(true);
     try {
-      await window.api.localDb.deleteProject(projectId, true);
+      await window.api.localDb.deleteProject(deleteProjectTarget.id, true);
+      setDeleteProjectTarget(null);
       await loadProjects();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('Failed to delete project:', msg);
       alert((i18n.language === 'ar' ? 'فشل حذف المشروع:\n' : 'Failed to delete project:\n') + msg);
+    } finally {
+      setIsDeletingProject(false);
     }
   };
 
@@ -2876,7 +3011,7 @@ function ProjectListView({ workTypeFilter }: { workTypeFilter?: string }) {
                       <Download className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteProject(project.id)}
+                      onClick={() => setDeleteProjectTarget(project)}
                       className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg border border-red-500/30 transition-all shadow-sm"
                       title={i18n.language === 'ar' ? 'حذف المشروع' : 'Delete Project'}
                     >
@@ -2898,6 +3033,19 @@ function ProjectListView({ workTypeFilter }: { workTypeFilter?: string }) {
         editProjectId={editProjectId}
         workTypeArg={formWorkType}
         onSuccess={loadProjects}
+      />
+
+      {/* Modern Confirm Delete Modal for Projects */}
+      <ConfirmModal
+        isOpen={!!deleteProjectTarget}
+        title={isRtl ? 'تأكيد حذف المشروع' : 'Confirm Delete Project'}
+        message={isRtl ? 'هل أنت متأكد من حذف هذا المشروع؟ لا يمكن التراجع عن هذه العملية.' : 'Are you sure you want to delete this project? This cannot be undone.'}
+        itemName={deleteProjectTarget ? (projectDetailsMap[deleteProjectTarget.id]?.projectName || deleteProjectTarget.projectName || deleteProjectTarget.clientName) : ''}
+        itemBadge={deleteProjectTarget?.projectNumber}
+        description={deleteProjectTarget?.locationText ? (isRtl ? `الموقع: ${deleteProjectTarget.locationText}` : `Location: ${deleteProjectTarget.locationText}`) : undefined}
+        isLoading={isDeletingProject}
+        onConfirm={handleDeleteProject}
+        onClose={() => setDeleteProjectTarget(null)}
       />
     </div>
   );
@@ -3397,27 +3545,25 @@ export function ProjectDetailsPage(): React.ReactElement {
     });
   }, [id]);
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDeleteProject = async () => {
     if (!project) return;
-    const confirmed = await window.api.dialog.confirm({
-      message: isRtl ? 'هل أنت متأكد من حذف هذا المشروع نهائياً؟' : 'Are you sure you want to delete this project permanently?',
-      title: isRtl ? 'تأكيد الحذف' : 'Confirm Delete',
-      buttons: isRtl ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (confirmed) {
-      try {
-        // Enforce deletion permission checks
-        if (userRole === 'Staff') {
-          alert('Error: Staff roles are unauthorized to delete projects / خطأ: رتبة المساحين غير مخولة بحذف المشاريع');
-          return;
-        }
-
-        await window.api.localDb.upsertProject({ ...project, status: 'DELETED' }, true);
-        alert(isRtl ? 'تم حذف المشروع بنجاح' : 'Project deleted successfully');
-        navigate('/dashboard');
-      } catch (err) {
-        console.error(err);
-      }
+    if (userRole === 'Staff') {
+      alert(isRtl ? 'خطأ: رتبة المساحين غير مخولة بحذف المشاريع' : 'Error: Staff roles are unauthorized to delete projects');
+      setShowDeleteModal(false);
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await window.api.localDb.upsertProject({ ...project, status: 'DELETED' }, true);
+      setShowDeleteModal(false);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -5353,6 +5499,18 @@ export function ProjectDetailsPage(): React.ReactElement {
           </div>
         </div>
       )}
+
+      {/* Modern Confirm Delete Modal for Project Details Page */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title={isRtl ? 'تأكيد حذف المشروع نهائياً' : 'Delete Project Permanently'}
+        message={isRtl ? 'هل أنت متأكد من حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذه العملية.' : 'Are you sure you want to delete this project permanently? This action cannot be undone.'}
+        itemName={detailsJson?.projectName || project?.projectName || project?.clientName}
+        itemBadge={project?.projectNumber}
+        isLoading={isDeleting}
+        onConfirm={handleDeleteProject}
+        onClose={() => setShowDeleteModal(false)}
+      />
     </PlaceholderWrapper>
   );
 }
@@ -5565,35 +5723,33 @@ export function SettingsUsersPage(): React.ReactElement {
     }
   };
 
-  const handleDelete = async (user: UserItem) => {
-    const confirmMsg = isRtl
-      ? `تحذير: سيتم حذف حساب "${user.fullName}" نهائياً ولا يمكن التراجع. هل أنت متأكد؟`
-      : `WARNING: The account for "${user.fullName}" will be permanently deleted and cannot be recovered. Are you sure?`;
-    const confirmed = await window.api.dialog.confirm({
-      message: confirmMsg,
-      title: isRtl ? 'تحذير حذف حساب' : 'Warning: Delete User',
-      buttons: isRtl ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (confirmed) {
-      try {
-        const token = await window.api.secureStorage.getItem('accessToken');
-        const apiUrl = getApiUrl();
-        const response = await fetch(`${apiUrl}/users/${user.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+  const [deleteUserTarget, setDeleteUserTarget] = useState<UserItem | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.message || 'Failed to delete user');
+  const handleDelete = async () => {
+    if (!deleteUserTarget) return;
+    setIsDeletingUser(true);
+    try {
+      const token = await window.api.secureStorage.getItem('accessToken');
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/users/${deleteUserTarget.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
 
-        loadUsersData();
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to delete user');
       }
+
+      setDeleteUserTarget(null);
+      loadUsersData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -6704,22 +6860,20 @@ export function MasterLogPage(): React.ReactElement {
     window.print();
   };
 
-  const handleDeleteProject = async (id: string) => {
-    const confirmMsg = isRtl
-      ? 'هل أنت متأكد من حذف هذا المشروع نهائياً؟ لا يمكن التراجع عن هذه العملية.'
-      : 'Are you sure you want to delete this project permanently? This cannot be undone.';
-    const confirmed = await window.api.dialog.confirm({
-      message: confirmMsg,
-      title: isRtl ? 'تأكيد الحذف' : 'Confirm Delete',
-      buttons: isRtl ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (confirmed) {
-      try {
-        await window.api.localDb.deleteProject(id, true);
-        loadProjects();
-      } catch (err) {
-        console.error(err);
-      }
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<ProjectItem | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+
+  const handleDeleteProject = async () => {
+    if (!deleteProjectTarget) return;
+    setIsDeletingProject(true);
+    try {
+      await window.api.localDb.deleteProject(deleteProjectTarget.id, true);
+      setDeleteProjectTarget(null);
+      loadProjects();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeletingProject(false);
     }
   };
 
@@ -7099,14 +7253,20 @@ export function ContractsPage(): React.ReactElement {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDeleteContract = async (id: string) => {
-    if (confirm(isRtl ? 'هل أنت تأكد من رغبتك لحذف هذا العقد؟' : 'Are you sure you want to delete this contract?')) {
-      try {
-        await window.api.localDb.deleteProject(id, true);
-        loadContracts();
-      } catch (err) {
-        console.error(err);
-      }
+  const [deleteContractTarget, setDeleteContractTarget] = useState<ProjectItem | null>(null);
+  const [isDeletingContract, setIsDeletingContract] = useState(false);
+
+  const handleDeleteContract = async () => {
+    if (!deleteContractTarget) return;
+    setIsDeletingContract(true);
+    try {
+      await window.api.localDb.deleteProject(deleteContractTarget.id, true);
+      setDeleteContractTarget(null);
+      loadContracts();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeletingContract(false);
     }
   };
 
