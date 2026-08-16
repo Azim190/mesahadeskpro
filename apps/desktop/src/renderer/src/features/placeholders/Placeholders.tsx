@@ -1094,6 +1094,117 @@ function ProjectFormModal({
 
       // Save attachment file list metadata and metadata values inside details JSON
       const detailsUuid = crypto.randomUUID();
+      
+      let quotationData = existingDetailsJson.quotation;
+      if (workType === 'PRICE_OFFERS') {
+        const inputPrice = parseFloat(metadata.totalPrice || '0') || 0;
+        const finalClientObj = isNewClient ? { name: newClientName } : selectedClient;
+        const clientDisplayName = finalClientObj?.name || '';
+        
+        if (!quotationData) {
+          quotationData = {
+            quotationDate: new Date().toISOString().split('T')[0],
+            refNumber: metadata.offerNumber || projectNumber,
+            clientName: clientDisplayName,
+            toClientCompany: clientDisplayName,
+            attentionTo: '',
+            subject: projectName,
+            introduction: isRtl
+              ? `يسرنا أن نقدم لشركة/مؤسسة ${clientDisplayName || 'العميل الكريم'} عرضنا الفني والمالي المتكامل للقيام بـ "${projectName}".`
+              : `We are pleased to submit our proposal for "${projectName}".`,
+            scopeOfWork: [
+              {
+                id: '1',
+                title: projectName || (isRtl ? 'الأعمال والخدمات المساحية والاستشارية' : 'Surveying & Engineering Services'),
+                description: notes || (isRtl ? 'القيام بكافة الأعمال المساحية الميدانية وإعداد المخططات والتقارير الفنية المعتمدة.' : 'Complete technical surveying, field mapping, and engineering documentation.'),
+                notes: locationText ? (isRtl ? `الموقع: ${locationText}` : `Location: ${locationText}`) : ''
+              }
+            ],
+            pricingType: 'itemized',
+            lumpSumPrice: inputPrice,
+            items: [
+              {
+                id: '1',
+                itemNo: '1',
+                description: projectName || (isRtl ? 'أعمال استشارية ومساحية' : 'Engineering Consultancy & Surveying Works'),
+                unit: isRtl ? 'مقطوع' : 'LS',
+                quantity: 1,
+                unitPrice: inputPrice,
+                total: inputPrice
+              }
+            ],
+            currency: 'SAR',
+            discount: 0,
+            vatRate: 15,
+            executionDuration: metadata.executionDuration || (isRtl ? '30 يوم تقويمي' : '30 Calendar Days'),
+            mobilizationPeriod: isRtl ? '7 أيام عمل' : '7 Calendar Days',
+            deliveryTimeline: isRtl ? 'خلال المدة المتفق عليها من توقيع العقد' : 'Within agreed timeline',
+            exclusions: isRtl
+              ? [
+                  'الرسوم الحكومية ورسوم استخراج التراخيص البلدية',
+                  'أعمال فحص التربة والجسات الإنشائية',
+                  'أعمال الحفر والردم وتجهيز الموقع الفعلي'
+                ]
+              : [
+                  'Government fees & municipality permits',
+                  'Third-party material testing',
+                  'Site excavation and ground works'
+                ],
+            paymentTerms: metadata.paymentTerms ? [metadata.paymentTerms] : (isRtl
+              ? [
+                  '50% دفعة مقدمة عند توقيع الاتفاقية ومباشرة العمل',
+                  '50% دفعة نهائية عند تسليم التقارير والمخططات النهائية'
+                ]
+              : [
+                  '50% Advance Payment upon signing of proposal',
+                  '50% Final Payment upon submission of survey report'
+                ]),
+            validityDays: parseInt(metadata.validityDays || '30', 10) || 30,
+            termsConditions: {
+              general: isRtl ? 'يتم تنفيذ الخدمات الاستشارية وفقاً للأصول الفنية والهندسية المتعارف عليها وكود البناء السعودي.' : 'The services will be conducted in accordance with professional engineering standards.',
+              clientResponsibilities: isRtl ? 'يلتزم العميل بتسهيل الدخول للموقع وتوفير كافة مستندات ووثائق الملكية.' : 'Client shall provide access to the site and all necessary ownership documents.',
+              consultantResponsibilities: isRtl ? 'يلتزم المكتب بتقديم التقارير الفنية والرسومات الهندسية الرقمية ضمن المدة المتفق عليها.' : 'Consultant shall deliver the digital CAD drawings and survey reports within the agreed timeline.',
+              liabilityLimitations: isRtl ? 'تقتصر المسؤولية القانونية للمكتب على حدود قيمة أتعاب هذا العقد فقط.' : 'Consultant liability is limited to the contract value.',
+              confidentiality: isRtl ? 'يلتزم الطرفان بالمحافظة التامة على سرية مستندات المشروع وبيانات العميل.' : 'Both parties agree to maintain strict confidentiality of all project documents.'
+            },
+            signatureSection: {
+              preparedBy: isRtl ? 'إعداد: قسم المساحة' : 'Prepared By: Surveyor Dept.',
+              reviewedBy: isRtl ? 'تدقيق: المدير الفني' : 'Reviewed By: Technical Director',
+              approvedBy: isRtl ? 'اعتماد: المدير العام' : 'Approved By: General Manager',
+              digitalSignature: true
+            },
+            branding: {
+              companyName: isRtl ? 'دار مكة للاستشارات الهندسية' : 'Dar Makkah Engineering Consultations',
+              address: isRtl ? 'مكة المكرمة، المملكة العربية السعودية' : 'Makkah Al Mukarramah, Saudi Arabia',
+              phone: '+966 12 555 1234',
+              email: 'info@darmakkah.com.sa',
+              website: 'www.darmakkah.com.sa',
+              crNumber: '4031087359',
+              vatNumber: '300012345600003'
+            },
+            templateType: 'Engineering Consultancy',
+            versionHistory: [
+              { version: 1, updatedAt: new Date().toISOString(), updatedBy: creatorName || 'Admin', status: 'Draft', changes: 'Initial Price Offer Created' }
+            ],
+            currentStatus: 'Draft'
+          };
+        } else {
+          quotationData = {
+            ...quotationData,
+            refNumber: metadata.offerNumber || projectNumber || quotationData.refNumber,
+            clientName: clientDisplayName || quotationData.clientName,
+            toClientCompany: clientDisplayName || quotationData.toClientCompany,
+            subject: projectName || quotationData.subject,
+          };
+          if (inputPrice > 0 && quotationData.items && quotationData.items.length === 1) {
+            quotationData.items[0].unitPrice = inputPrice;
+            quotationData.items[0].total = inputPrice * (quotationData.items[0].quantity || 1);
+            quotationData.items[0].description = projectName || quotationData.items[0].description;
+            quotationData.lumpSumPrice = inputPrice;
+          }
+        }
+      }
+
       await window.api.localDb.upsertProjectDetails(
         {
           id: detailsUuid,
@@ -1104,6 +1215,7 @@ function ProjectFormModal({
             projectName,
             attachments,
             metadata,
+            quotation: quotationData,
             createdBy: isEdit ? (existingDetailsJson.createdBy || creatorName) : creatorName,
           },
           createdAt: new Date().toISOString(),
@@ -3101,42 +3213,92 @@ export function ProjectDetailsPage(): React.ReactElement {
       const details = (await window.api.localDb.getProjectDetails(id)) as { detailsJson?: ProjectDetailsJson } | null;
       if (details && details.detailsJson) {
         setDetailsJson(details.detailsJson);
+        const meta = details.detailsJson.metadata || {};
+        const inputPrice = parseFloat(meta.totalPrice || meta.contractValue || meta.grandTotal || '0') || 0;
+        
         if (details.detailsJson.quotation) {
-          setQuotation(details.detailsJson.quotation);
+          let quo = { ...details.detailsJson.quotation };
+          // If metadata has the user's real input price, sync it with the quotation:
+          if (inputPrice > 0 && quo.items && quo.items.length === 1 && (quo.items[0].unitPrice === 1500 || quo.items[0].unitPrice !== inputPrice)) {
+            quo.items = [
+              {
+                ...quo.items[0],
+                description: projItem?.projectName || quo.items[0].description,
+                unitPrice: inputPrice,
+                total: inputPrice * (quo.items[0].quantity || 1)
+              }
+            ];
+            quo.lumpSumPrice = inputPrice;
+          }
+          if (projItem?.projectName && (!quo.subject || quo.subject === 'مشروع افتراضي')) {
+            quo.subject = projItem.projectName;
+          }
+          if (projItem?.clientName && (!quo.clientName || !quo.toClientCompany)) {
+            quo.clientName = projItem.clientName;
+            quo.toClientCompany = projItem.clientName;
+          }
+          setQuotation(quo);
         } else if (projItem && projItem.workType === 'PRICE_OFFERS') {
-          // Initialize default quotation fields
+          // Initialize default quotation dynamically from project and metadata inputs
+          const price = inputPrice > 0 ? inputPrice : 1500;
           const defaultQuo = {
             quotationDate: new Date().toISOString().split('T')[0],
-            refNumber: projItem.projectNumber || '',
+            refNumber: meta.offerNumber || projItem.projectNumber || '',
             clientName: projItem.clientName || '',
             toClientCompany: projItem.clientName || '',
             attentionTo: '',
-            subject: projItem.projectName || '',
+            subject: projItem.projectName || (isRtl ? 'عرض سعر فني ومالي' : 'Technical & Commercial Proposal'),
             introduction: isRtl 
-              ? 'يسرنا أن نقدم لكم عرضنا الفني والمالي الخاص بتقديم الخدمات الاستشارية الهندسية لمشروعكم الموقر.'
-              : 'We are pleased to submit our quotation for providing engineering consultancy services for the above-mentioned project.',
+              ? `يسرنا أن نقدم لكم عرضنا الفني والمالي الخاص بـ "${projItem.projectName || 'مشروعكم الموقر'}" بمدينة ${projItem.locationText || 'مكة المكرمة'}.`
+              : `We are pleased to submit our quotation for providing engineering consultancy services for "${projItem.projectName || 'your esteemed project'}".`,
             scopeOfWork: isRtl 
               ? [
-                  { id: '1', title: 'أعمال الرفع المساحي وإنتاج كروكي الموقع', description: 'القيام بالرفع المساحي الميداني لقطع الأراضي، وتحديد المناسيب، والحدود، والربط بشبكة الإحداثيات الوطنية.', notes: 'يلتزم العميل بتقديم صك الملكية الكترونياً.' }
+                  { 
+                    id: '1', 
+                    title: projItem.projectName || 'الأعمال والخدمات المساحية والاستشارية', 
+                    description: projItem.notes || 'القيام بالرفع المساحي الميداني لقطع الأراضي، وتحديد المناسيب، والحدود، والربط بشبكة الإحداثيات الوطنية وإعداد المخططات.', 
+                    notes: projItem.locationText ? `الموقع: ${projItem.locationText}` : 'يلتزم العميل بتقديم صك الملكية الكترونياً.' 
+                  }
                 ]
               : [
-                  { id: '1', title: 'Topographic Surveying', description: 'Perform complete topographic survey of the land parcel including boundary coordinates, elevations, and existing structures.', notes: 'Boundary marks will be established.' }
+                  { 
+                    id: '1', 
+                    title: projItem.projectName || 'Topographic Surveying & Consultancy', 
+                    description: projItem.notes || 'Perform complete topographic survey of the land parcel including boundary coordinates, elevations, and existing structures.', 
+                    notes: projItem.locationText ? `Location: ${projItem.locationText}` : 'Boundary marks will be established.' 
+                  }
                 ],
             pricingType: 'itemized',
-            lumpSumPrice: 1500,
+            lumpSumPrice: price,
             items: isRtl
               ? [
-                  { id: '1', itemNo: '1', description: 'أعمال الرفع المساحي الميداني وتحديد الإحداثيات GPS', unit: 'مقطوع', quantity: 1, unitPrice: 1500, total: 1500 }
+                  { 
+                    id: '1', 
+                    itemNo: '1', 
+                    description: projItem.projectName || 'أعمال الرفع المساحي الميداني وتحديد الإحداثيات GPS', 
+                    unit: 'مقطوع', 
+                    quantity: 1, 
+                    unitPrice: price, 
+                    total: price 
+                  }
                 ]
               : [
-                  { id: '1', itemNo: '1', description: 'Topographic Survey Works & GPS Coordinates', unit: 'LS', quantity: 1, unitPrice: 1500, total: 1500 }
+                  { 
+                    id: '1', 
+                    itemNo: '1', 
+                    description: projItem.projectName || 'Topographic Survey Works & GPS Coordinates', 
+                    unit: 'LS', 
+                    quantity: 1, 
+                    unitPrice: price, 
+                    total: price 
+                  }
                 ],
             currency: 'SAR',
             discount: 0,
             vatRate: 15,
-            executionDuration: isRtl ? '30 يوم تقويمي' : '30 Calendar Days',
+            executionDuration: meta.executionDuration || (isRtl ? '30 يوم تقويمي' : '30 Calendar Days'),
             mobilizationPeriod: isRtl ? '7 أيام عمل' : '7 Calendar Days',
-            deliveryTimeline: isRtl ? 'خلال 30 يوم من توقيع العقد' : 'Within 30 days',
+            deliveryTimeline: isRtl ? 'خلال المدة المتفق عليها من توقيع العقد' : 'Within agreed timeline',
             exclusions: isRtl
               ? [
                   'الرسوم الحكومية ورسوم استخراج التراخيص البلدية',
@@ -3148,7 +3310,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                   'Third-party material testing',
                   'Boundary wall construction'
                 ],
-            paymentTerms: isRtl
+            paymentTerms: meta.paymentTerms ? [meta.paymentTerms] : (isRtl
               ? [
                   '50% دفعة مقدمة عند توقيع الاتفاقية ومباشرة العمل',
                   '50% دفعة نهائية عند تسليم الكروكيات والمخططات النهائية'
@@ -3156,11 +3318,11 @@ export function ProjectDetailsPage(): React.ReactElement {
               : [
                   '50% Advance Payment upon signing of proposal',
                   '50% Final Payment upon submission of survey report'
-                ],
-            validityDays: 30,
+                ]),
+            validityDays: parseInt(meta.validityDays || '30', 10) || 30,
             termsConditions: isRtl
               ? {
-                  general: 'يتم تنفيذ الخدمات الاستشارية وفقاً للأصول الفنية والهندسية المتعارف عليها.',
+                  general: 'يتم تنفيذ الخدمات الاستشارية وفقاً للأصول الفنية والهندسية المتعارف عليها وكود البناء السعودي.',
                   clientResponsibilities: 'يلتزم العميل بتسهيل الدخول للموقع وتوفير كافة مستندات ووثائق الملكية.',
                   consultantResponsibilities: 'يلتزم المكتب بتقديم التقارير الفنية والرسومات الهندسية الرقمية ضمن المدة المتفق عليها.',
                   liabilityLimitations: 'تقتصر المسؤولية القانونية للمكتب على حدود قيمة أتعاب هذا العقد فقط.',
@@ -3186,7 +3348,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                   phone: '+966 12 555 1234',
                   email: 'info@darmakkah.com.sa',
                   website: 'www.darmakkah.com.sa',
-                  crNumber: '4031001234',
+                  crNumber: '4031087359',
                   vatNumber: '300012345600003'
                 }
               : {
@@ -3195,7 +3357,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                   phone: '+966 12 555 1234',
                   email: 'info@darmakkah.com.sa',
                   website: 'www.darmakkah.com.sa',
-                  crNumber: '4031001234',
+                  crNumber: '4031087359',
                   vatNumber: '300012345600003'
                 },
             templateType: 'Engineering Consultancy',
