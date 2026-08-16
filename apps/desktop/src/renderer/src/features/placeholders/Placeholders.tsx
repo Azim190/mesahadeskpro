@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../app/ThemeProvider';
 import { useSync } from '../../shared/hooks/useSync';
 import { DMC_STAMP_BASE64 } from '../../assets/stampData';
+import { DMC_LOGO_BASE64 } from '../../assets/logoData';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -64,34 +65,14 @@ export function getProgressColor(progress: number): string {
 // Dar Makkah (DMC) Official Corporate Logo Component
 export function DmcLogo({ className = "", isCompact = false }: { className?: string; isCompact?: boolean }): React.ReactElement {
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Arabic & English Typography */}
-      <div className="flex flex-col justify-center leading-none text-start">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-black text-xl tracking-tighter font-sans">DMC</span>
-          <span className="font-black text-lg font-display tracking-tight">دار مكة</span>
-        </div>
-        {!isCompact && (
-          <>
-            <span className="text-[9.5px] font-extrabold opacity-90 mt-0.5 tracking-tight">للاستشارات الهندسية</span>
-            <span className="text-[6.5px] font-black tracking-widest opacity-70 uppercase mt-0.5">ENGINEERING CONSULTANCY</span>
-          </>
-        )}
-      </div>
-
-      {/* Architectural Emblem Box */}
-      <div className="relative border-2 border-current rounded-sm p-0.5 flex flex-col items-center justify-center w-10 h-10 shrink-0">
-        <svg viewBox="0 0 40 40" className="w-full h-full fill-none stroke-current stroke-[2.2]" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="2" width="36" height="36" rx="1" />
-          <path d="M 10 34 V 18 A 8 8 0 0 1 26 18 V 34" />
-          <path d="M 18 34 V 22 A 4 4 0 0 1 26 22 V 34" />
-          <line x1="14" y1="20" x2="22" y2="20" />
-          <line x1="14" y1="24" x2="22" y2="24" />
-          <line x1="14" y1="28" x2="22" y2="28" />
-          <rect x="28" y="14" width="4" height="4" fill="currentColor" stroke="none" />
-        </svg>
-        <span className="text-[5px] font-black tracking-tighter leading-none mt-0.5 uppercase">SINCE 1986</span>
-      </div>
+    <div className={`inline-flex items-center select-none ${className}`}>
+      <img
+        src={DMC_LOGO_BASE64}
+        alt="DMC للاستشارات الهندسية - Engineering Consultancy"
+        className={`object-contain pointer-events-none drop-shadow-sm transition-all rounded-lg bg-white/95 p-1 border border-border/40 ${
+          isCompact ? 'h-8 max-w-[130px]' : 'h-10 max-w-[170px]'
+        }`}
+      />
     </div>
   );
 }
@@ -3834,6 +3815,7 @@ export function ProjectDetailsPage(): React.ReactElement {
       </head>
       <body>
         <div class="header">
+          <img src="${DMC_LOGO_BASE64}" width="180" alt="DMC Logo" style="margin-bottom: 8px; display: inline-block;" />
           <h2>${quotation.branding?.companyName || 'Dar Makkah Engineering Consultations'}</h2>
           <p>${quotation.branding?.address || ''} | Tel: ${quotation.branding?.phone || ''}</p>
         </div>
@@ -5185,6 +5167,7 @@ export function ProjectDetailsPage(): React.ReactElement {
           {/* Header */}
           <div className="flex justify-between items-start border-b-2 border-primary pb-4">
             <div>
+              <DmcLogo className="mb-2.5" />
               <h2 className="text-xl font-bold text-primary">{quotation.branding?.companyName || 'Dar Makkah Engineering'}</h2>
               <p className="text-[10px] text-slate-500 mt-1 max-w-xs">{quotation.branding?.address || 'Makkah, Saudi Arabia'}</p>
               <p className="text-[10px] text-slate-500">Tel: {quotation.branding?.phone || ''} | CR: {quotation.branding?.crNumber || ''}</p>
