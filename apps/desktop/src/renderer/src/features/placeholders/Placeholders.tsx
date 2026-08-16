@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../app/ThemeProvider';
 import { useSync } from '../../shared/hooks/useSync';
-import dmcStamp from '../../assets/dmc-stamp.png';
+import { DMC_STAMP_BASE64 } from '../../assets/stampData';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -98,7 +98,7 @@ export function DmcLogo({ className = "", isCompact = false }: { className?: str
 export function DmcStamp({ className = "" }: { className?: string }): React.ReactElement {
   return (
     <img
-      src={dmcStamp}
+      src={DMC_STAMP_BASE64}
       alt="DMC Official Stamp - شركة دار مكة للاستشارات الهندسية"
       className={`object-contain drop-shadow-sm select-none pointer-events-none ${className}`}
     />
@@ -3571,7 +3571,7 @@ export function ProjectDetailsPage(): React.ReactElement {
               <td style="border: none; text-align: center; width: 33%; vertical-align: top;">
                 <b>${isRtl ? 'اعتماد وختم الشركة' : 'Approved & Sealed'}</b><br/><br/>
                 ${quotation.signatureSection?.approvedBy || ''}<br/>
-                <img src="${dmcStamp}" width="120" height="120" style="margin-top: 8px;" alt="DMC Stamp" />
+                <img src="${DMC_STAMP_BASE64}" width="120" height="120" style="margin-top: 8px;" alt="DMC Stamp" />
               </td>
             </tr>
           </table>
@@ -4989,9 +4989,9 @@ export function ProjectDetailsPage(): React.ReactElement {
               {/* DMC Official Seal Stamp */}
               <div className="relative flex items-center justify-center pt-1">
                 <img
-                  src={dmcStamp}
+                  src={DMC_STAMP_BASE64}
                   alt="DMC Official Stamp"
-                  className="w-28 h-28 object-contain drop-shadow-sm select-none pointer-events-none transform -rotate-3 hover:rotate-0 transition-transform duration-300"
+                  className="w-32 h-32 object-contain drop-shadow-md select-none pointer-events-none transform -rotate-3 hover:rotate-0 transition-transform duration-300"
                 />
               </div>
             </div>
