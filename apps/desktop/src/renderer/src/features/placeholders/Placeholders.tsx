@@ -3214,28 +3214,34 @@ export function ProjectDetailsPage(): React.ReactElement {
       if (details && details.detailsJson) {
         setDetailsJson(details.detailsJson);
         const meta = details.detailsJson.metadata || {};
-        const inputPrice = parseFloat(meta.totalPrice || meta.contractValue || meta.grandTotal || '0') || 0;
+        const inputPrice = parseFloat(meta.totalPrice || '0') || 0;
         
-        if (details.detailsJson.quotation) {
-          let quo = { ...details.detailsJson.quotation };
-          // If metadata has the user's real input price, sync it with the quotation:
-          if (inputPrice > 0 && quo.items && quo.items.length === 1 && (quo.items[0].unitPrice === 1500 || quo.items[0].unitPrice !== inputPrice)) {
+        let quo = details.detailsJson.quotation;
+        if (quo) {
+          quo = { ...quo };
+          if (inputPrice > 0 && (!quo.items || quo.items.length === 0 || (quo.items.length === 1 && quo.items[0].total !== inputPrice))) {
             quo.items = [
               {
-                ...quo.items[0],
-                description: projItem?.projectName || quo.items[0].description,
+                id: quo.items?.[0]?.id || '1',
+                itemNo: quo.items?.[0]?.itemNo || '1',
+                description: projItem?.projectName || quo.items?.[0]?.description || (isRtl ? 'أعمال استشارية ومساحية' : 'Engineering & Surveying Works'),
+                unit: quo.items?.[0]?.unit || (isRtl ? 'مقطوع' : 'LS'),
+                quantity: quo.items?.[0]?.quantity || 1,
                 unitPrice: inputPrice,
-                total: inputPrice * (quo.items[0].quantity || 1)
+                total: inputPrice * (quo.items?.[0]?.quantity || 1)
               }
             ];
             quo.lumpSumPrice = inputPrice;
           }
-          if (projItem?.projectName && (!quo.subject || quo.subject === 'مشروع افتراضي')) {
+          if (projItem?.projectName) {
             quo.subject = projItem.projectName;
           }
-          if (projItem?.clientName && (!quo.clientName || !quo.toClientCompany)) {
+          if (projItem?.clientName) {
             quo.clientName = projItem.clientName;
             quo.toClientCompany = projItem.clientName;
+          }
+          if (meta.offerNumber || projItem?.projectNumber) {
+            quo.refNumber = meta.offerNumber || projItem?.projectNumber;
           }
           setQuotation(quo);
         } else if (projItem && projItem.workType === 'PRICE_OFFERS') {
@@ -3639,6 +3645,33 @@ export function ProjectDetailsPage(): React.ReactElement {
   const handleExportWord = () => {
     if (!quotation) return;
     
+    const meta = detailsJson?.metadata || {};
+    const inputPrice = parseFloat(meta.totalPrice || '0') || 0;
+    let effectiveItems = quotation.items || [];
+    if (inputPrice > 0 && (!effectiveItems.length || (effectiveItems.length === 1 && effectiveItems[0].total !== inputPrice))) {
+      effectiveItems = [
+        {
+          id: effectiveItems[0]?.id || '1',
+          itemNo: effectiveItems[0]?.itemNo || '1',
+          description: project?.projectName || quotation.subject || effectiveItems[0]?.description || (isRtl ? 'أعمال استشارية ومساحية' : 'Engineering & Surveying Works'),
+          unit: effectiveItems[0]?.unit || (isRtl ? 'مقطوع' : 'LS'),
+          quantity: effectiveItems[0]?.quantity || 1,
+          unitPrice: inputPrice,
+          total: inputPrice * (effectiveItems[0]?.quantity || 1)
+        }
+      ];
+    }
+    let subtotal = 0;
+    if (quotation.pricingType === 'lump_sum') {
+      subtotal = inputPrice > 0 ? inputPrice : (quotation.lumpSumPrice || 0);
+    } else {
+      subtotal = effectiveItems.reduce((sum: number, item: any) => sum + item.total, 0);
+      if (subtotal === 0 && inputPrice > 0) subtotal = inputPrice;
+    }
+    const vatAmount = (subtotal * (quotation.vatRate || 15)) / 100;
+    const discount = quotation.discount || 0;
+    const grandTotal = subtotal + vatAmount - discount;
+    
     const htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -3680,7 +3713,7 @@ export function ProjectDetailsPage(): React.ReactElement {
         
         <h4>COMMERCIAL PROPOSAL</h4>
         ${quotation.pricingType === 'lump_sum' 
-          ? `<p>Lump Sum Price: <b>${quotation.lumpSumPrice} ${quotation.currency}</b></p>`
+          ? `<p>Lump Sum Price: <b>${subtotal} ${quotation.currency}</b></p>`
           : `
             <table>
               <thead>
@@ -3694,7 +3727,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                 </tr>
               </thead>
               <tbody>
-                ${quotation.items?.map((item: any) => `
+                ${effectiveItems.map((item: any) => `
                   <tr>
                     <td>${item.itemNo}</td>
                     <td>${item.description}</td>
@@ -3704,6 +3737,18 @@ export function ProjectDetailsPage(): React.ReactElement {
                     <td>${item.total}</td>
                   </tr>
                 `).join('') || ''}
+                <tr>
+                  <td colspan="5" style="text-align: right; font-weight: bold;">Subtotal:</td>
+                  <td style="font-weight: bold;">${subtotal} ${quotation.currency}</td>
+                </tr>
+                <tr>
+                  <td colspan="5" style="text-align: right; font-weight: bold;">VAT (${quotation.vatRate || 15}%):</td>
+                  <td style="font-weight: bold;">${vatAmount.toFixed(2)} ${quotation.currency}</td>
+                </tr>
+                <tr>
+                  <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                  <td style="font-weight: bold; color: #1B365D;">${grandTotal.toFixed(2)} ${quotation.currency}</td>
+                </tr>
               </tbody>
             </table>
           `
@@ -4921,12 +4966,34 @@ export function ProjectDetailsPage(): React.ReactElement {
   const renderDocument = () => {
     if (!quotation) return null;
     
+    const meta = detailsJson?.metadata || {};
+    const inputPrice = parseFloat(meta.totalPrice || '0') || 0;
+    
+    // Ensure effective items always reflect the actual entered price if single item or matching metadata
+    let effectiveItems = quotation.items || [];
+    if (inputPrice > 0 && (!effectiveItems.length || (effectiveItems.length === 1 && effectiveItems[0].total !== inputPrice))) {
+      effectiveItems = [
+        {
+          id: effectiveItems[0]?.id || '1',
+          itemNo: effectiveItems[0]?.itemNo || '1',
+          description: project?.projectName || quotation.subject || effectiveItems[0]?.description || (isRtl ? 'أعمال استشارية ومساحية' : 'Engineering & Surveying Works'),
+          unit: effectiveItems[0]?.unit || (isRtl ? 'مقطوع' : 'LS'),
+          quantity: effectiveItems[0]?.quantity || 1,
+          unitPrice: inputPrice,
+          total: inputPrice * (effectiveItems[0]?.quantity || 1)
+        }
+      ];
+    }
+    
     // Calculate values
     let subtotal = 0;
     if (quotation.pricingType === 'lump_sum') {
-      subtotal = quotation.lumpSumPrice || 0;
+      subtotal = inputPrice > 0 ? inputPrice : (quotation.lumpSumPrice || 0);
     } else {
-      subtotal = (quotation.items || []).reduce((sum: number, item: any) => sum + item.total, 0);
+      subtotal = effectiveItems.reduce((sum: number, item: any) => sum + item.total, 0);
+      if (subtotal === 0 && inputPrice > 0) {
+        subtotal = inputPrice;
+      }
     }
     const vatAmount = (subtotal * (quotation.vatRate || 15)) / 100;
     const discount = quotation.discount || 0;
@@ -5048,7 +5115,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                     </tr>
                   </thead>
                   <tbody>
-                    {(quotation.items || []).map((item: any) => (
+                    {effectiveItems.map((item: any) => (
                       <tr key={item.id} className="border-b border-slate-200 hover:bg-slate-50/50">
                         <td className="p-2 border-e border-slate-200 font-mono">{item.itemNo}</td>
                         <td className="p-2 border-e border-slate-200">{item.description}</td>
