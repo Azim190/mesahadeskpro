@@ -5692,39 +5692,36 @@ export function SettingsUsersPage(): React.ReactElement {
     }
   };
 
-  const handleDeactivate = async (user: UserItem) => {
-    const confirmMsg = isRtl
-      ? `هل أنت متأكد من إلغاء تنشيط الحساب: ${user.fullName}؟`
-      : `Are you sure you want to deactivate: ${user.fullName}?`;
-    const confirmed = await window.api.dialog.confirm({
-      message: confirmMsg,
-      title: isRtl ? 'تأكيد الإجراء' : 'Confirm Action',
-      buttons: isRtl ? ['نعم', 'إلغاء'] : ['Yes', 'Cancel'],
-    });
-    if (confirmed) {
-      try {
-        const token = await window.api.secureStorage.getItem('accessToken');
-        const apiUrl = getApiUrl();
-        const response = await fetch(`${apiUrl}/users/${user.id}/deactivate`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to deactivate user');
-        }
-
-        loadUsersData();
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      }
-    }
-  };
-
+  const [deactivateUserTarget, setDeactivateUserTarget] = useState<UserItem | null>(null);
+  const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [deleteUserTarget, setDeleteUserTarget] = useState<UserItem | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  const handleDeactivate = async () => {
+    if (!deactivateUserTarget) return;
+    setIsDeactivatingUser(true);
+    try {
+      const token = await window.api.secureStorage.getItem('accessToken');
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/users/${deactivateUserTarget.id}/deactivate`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to deactivate user');
+      }
+
+      setDeactivateUserTarget(null);
+      loadUsersData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsDeactivatingUser(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteUserTarget) return;
@@ -5875,7 +5872,7 @@ export function SettingsUsersPage(): React.ReactElement {
                         </button>
                         {user.isActive && (
                           <button
-                            onClick={() => handleDeactivate(user)}
+                            onClick={() => setDeactivateUserTarget(user)}
                             className="p-1 bg-destructive/10 text-destructive border border-destructive/20 rounded shadow-sm hover:bg-destructive/20 text-xs transition-all"
                             title={isRtl ? 'إلغاء التنشيط' : 'Deactivate Account'}
                           >
@@ -5883,7 +5880,7 @@ export function SettingsUsersPage(): React.ReactElement {
                           </button>
                         )}
                         <button
-                          onClick={() => handleDelete(user)}
+                          onClick={() => setDeleteUserTarget(user)}
                           className="p-1 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded shadow-sm hover:bg-red-500/20 text-xs transition-all"
                           title={isRtl ? 'حذف الحساب نهائياً' : 'Delete User Permanently'}
                         >
@@ -6083,6 +6080,34 @@ export function SettingsUsersPage(): React.ReactElement {
             </div>
           </div>
         )}
+
+        {/* Modern Confirm Deactivate Modal for Users */}
+        <ConfirmModal
+          isOpen={!!deactivateUserTarget}
+          variant="warning"
+          title={isRtl ? 'تأكيد إلغاء تنشيط الحساب' : 'Confirm Account Deactivation'}
+          message={isRtl ? `هل أنت متأكد من تعطيل حساب "${deactivateUserTarget?.fullName}"؟ لن يتمكن المستخدم من الدخول حتى إعادة التنشيط.` : `Are you sure you want to deactivate the account for "${deactivateUserTarget?.fullName}"?`}
+          itemName={deactivateUserTarget?.fullName}
+          itemBadge={deactivateUserTarget?.role}
+          description={deactivateUserTarget?.iqamaId}
+          confirmLabel={isRtl ? 'إلغاء التنشيط' : 'Deactivate'}
+          isLoading={isDeactivatingUser}
+          onConfirm={handleDeactivate}
+          onClose={() => setDeactivateUserTarget(null)}
+        />
+
+        {/* Modern Confirm Delete Modal for Users */}
+        <ConfirmModal
+          isOpen={!!deleteUserTarget}
+          title={isRtl ? 'تحذير حذف حساب المستخدم نهائياً' : 'Warning: Delete User Account Permanently'}
+          message={isRtl ? `سيتم حذف حساب "${deleteUserTarget?.fullName}" نهائياً من قاعدة البيانات ولن يمكن استعادته.` : `The user account for "${deleteUserTarget?.fullName}" will be permanently removed.`}
+          itemName={deleteUserTarget?.fullName}
+          itemBadge={deleteUserTarget?.role}
+          description={deleteUserTarget?.iqamaId}
+          isLoading={isDeletingUser}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteUserTarget(null)}
+        />
       </div>
     </PlaceholderWrapper>
   );
