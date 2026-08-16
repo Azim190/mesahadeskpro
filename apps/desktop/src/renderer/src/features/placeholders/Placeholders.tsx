@@ -5889,9 +5889,12 @@ export function LoginPage(): React.ReactElement {
         throw new Error(data.message || (isRtl ? 'فشل التحقق من الهوية.' : 'Authentication failed.'));
       }
 
-      // Successful first factor, go to OTP page
-      const mockOtpParam = data.mockOtp ? `&mockOtp=${data.mockOtp}` : '';
-      navigate(`/verify-otp?iqamaId=${iqamaId}${mockOtpParam}`);
+      // Successful login - save credentials and navigate directly to dashboard
+      await window.api.secureStorage.setItem('accessToken', data.accessToken);
+      await window.api.secureStorage.setItem('refreshToken', data.refreshToken);
+      await window.api.secureStorage.setItem('user', JSON.stringify(data.user));
+
+      navigate('/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : (isRtl ? 'حدث خطأ ما. الرجاء المحاولة مرة أخرى.' : 'An error occurred. Please try again.');
       setError(message);

@@ -10,7 +10,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: shared.LoginDto,
-  ): Promise<{ message: string; cooldownRemaining: number }> {
+  ): Promise<shared.AuthResponseDto> {
     return this.authService.login(loginDto);
   }
 

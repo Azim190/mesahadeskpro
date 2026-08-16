@@ -55,10 +55,8 @@ export class AuthService {
     await this.redis.del(`lockout:${iqamaId}`);
   }
 
-  // Phase 1: Login Credentials Verification
-  async login(
-    dto: LoginDto,
-  ): Promise<{ message: string; cooldownRemaining: number; mockOtp?: string }> {
+  // Direct Login: Email & Password Verification
+  async login(dto: LoginDto): Promise<AuthResponseDto> {
     const { iqamaId, password } = dto;
 
     // Validate Email format
@@ -85,48 +83,39 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    // Check resend SMS cooldown (60 seconds)
-    const cooldown = await this.redis.get(`cooldown:${iqamaId}`);
-    if (cooldown) {
-      const remaining = Math.round((parseInt(cooldown) - Date.now()) / 1000);
-      return {
-        message: 'OTP already sent. Please wait for cooldown.',
-        cooldownRemaining: remaining > 0 ? remaining : 0,
-      };
-    }
-
-    // Credentials valid! Proceed to issue and send OTP
+    // Credentials valid! Reset failure counters
     await this.resetFailures(iqamaId);
-    const otp = this.generateOtp();
-    const hashedOtp = bcrypt.hashSync(otp, 10);
 
-    // Save OTP to Redis with 5 minutes TTL (300 seconds)
-    await this.redis.set(`otp:${iqamaId}`, hashedOtp, 300);
-    // Set 60 seconds resend cooldown
-    await this.redis.set(
-      `cooldown:${iqamaId}`,
-      (Date.now() + 60000).toString(),
-      60,
-    );
+    // Update last login
+    await this.db.updateUserLastLogin(user.id);
 
-    // Log OTP in dev (mock gateway will log to console)
-    await this.sms.sendSms(
-      user.phoneNumber,
-      `Your MasahaDesk verification code is: ${otp}. Valid for 5 minutes.`,
-    );
+    // Generate JWT Tokens
+    const payload = {
+      sub: user.id,
+      iqamaId: user.iqamaId,
+      role: user.role,
+      tenantId: user.tenantId,
+    };
+
+    const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+    const refreshToken = this.jwt.sign({ sub: user.id }, { expiresIn: '7d' });
 
     // Log to Audit Log
     await this.db.createAuditLog({
       tenantId: user.tenantId,
       userId: user.id,
-      action: 'LOGIN_OTP_SENT',
+      action: 'LOGIN_SUCCESS',
       detailsJson: { iqamaId },
     });
 
+    // Remove password hash from user response
+    const userWithoutPassword = { ...user };
+    delete (userWithoutPassword as { passwordHash?: string }).passwordHash;
+
     return {
-      message: 'Verification code sent via SMS.',
-      cooldownRemaining: 60,
-      mockOtp: otp,
+      user: userWithoutPassword,
+      accessToken,
+      refreshToken,
     };
   }
 
