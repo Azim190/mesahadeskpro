@@ -409,11 +409,11 @@ function PlaceholderWrapper({
       {/* Sidebar navigation */}
       <aside className="w-full md:w-64 bg-card border-e border-border p-6 flex flex-col justify-between shadow-sm print:hidden">
         <div>
-          <div className="mb-6 pb-4 border-b border-border/70">
-            <div className="w-full flex items-center justify-start overflow-hidden py-1">
+          <div className="mb-6 pb-4 border-b border-border/70 flex flex-col items-center text-center">
+            <div className="w-full flex items-center justify-center overflow-hidden py-1">
               <DmcLogo className="w-full max-w-[210px]" />
             </div>
-            <div className="mt-2.5 flex items-center justify-between text-[11px] text-muted-foreground font-semibold px-0.5">
+            <div className="mt-2.5 w-full flex items-center justify-center gap-2 text-[11px] text-muted-foreground font-semibold px-0.5">
               <span className="font-bold text-foreground/80">{isRtl ? 'مساحة ديسك برو' : 'MesahaDesk pro'}</span>
               <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded-full font-mono">{user?.role || 'Admin'}</span>
             </div>
