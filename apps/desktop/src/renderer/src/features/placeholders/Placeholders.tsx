@@ -1685,7 +1685,7 @@ function ProjectFormModal({
                     <input
                       type="number"
                       min="0.01"
-                      step="0.01"
+                      step="any"
                       value={metadata.totalArea || ''}
                       onChange={(e) => updateMetadata('totalArea', e.target.value)}
                       className="w-full px-3 py-1.5 border border-border rounded-lg bg-background text-sm focus:outline-none"
@@ -1774,6 +1774,7 @@ function ProjectFormModal({
                     <label className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'المبلغ الإجمالي (غير شامل الضريبة)' : 'Total Price (VAT Excl.)'}</label>
                     <input
                       type="number"
+                      step="any"
                       placeholder="0.00"
                       value={metadata.totalPrice || ''}
                       onChange={(e) => {
@@ -1816,6 +1817,7 @@ function ProjectFormModal({
                     <label className="block text-xs font-bold text-muted-foreground mb-1.5">{t('fields.paidAmount') || 'المبلغ المدفوع (ر.س)'}</label>
                     <input
                       type="number"
+                      step="any"
                       placeholder="0.00"
                       value={metadata.paidAmount || ''}
                       onChange={(e) => {
@@ -1837,7 +1839,7 @@ function ProjectFormModal({
                       placeholder="0%"
                       min="0"
                       max="100"
-                      step="1"
+                      step="any"
                       value={metadata.paymentPercentage || ''}
                       onChange={(e) => {
                         const pct = parseFloat(e.target.value) || 0;
@@ -1886,6 +1888,7 @@ function ProjectFormModal({
                     <label className="block text-xs font-bold text-muted-foreground mb-1.5">{t('fields.contractValue') || 'قيمة العقد الإجمالية (ر.س)'}</label>
                     <input
                       type="number"
+                      step="any"
                       placeholder="0.00"
                       value={metadata.contractValue || ''}
                       onChange={(e) => {
@@ -1904,6 +1907,7 @@ function ProjectFormModal({
                     <label className="block text-xs font-bold text-muted-foreground mb-1.5">{t('fields.paidAmount') || 'المبلغ المدفوع (ر.س)'}</label>
                     <input
                       type="number"
+                      step="any"
                       placeholder="0.00"
                       value={metadata.paidAmount || ''}
                       onChange={(e) => {
@@ -1925,7 +1929,7 @@ function ProjectFormModal({
                       placeholder="0%"
                       min="0"
                       max="100"
-                      step="1"
+                      step="any"
                       value={metadata.paymentPercentage || ''}
                       onChange={(e) => {
                         const pct = parseFloat(e.target.value) || 0;
@@ -1991,6 +1995,7 @@ function ProjectFormModal({
                       <label className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'قيمة الأتعاب (ر.س)' : 'Fee Amount (SAR)'}</label>
                       <input
                         type="number"
+                        step="any"
                         placeholder="0.00"
                         value={metadata.contractValue || ''}
                         onChange={(e) => {
@@ -2009,6 +2014,7 @@ function ProjectFormModal({
                       <label className="block text-xs font-bold text-muted-foreground mb-1.5">{t('fields.paidAmount') || 'المبلغ المدفوع (ر.س)'}</label>
                       <input
                         type="number"
+                        step="any"
                         placeholder="0.00"
                         value={metadata.paidAmount || ''}
                         onChange={(e) => {
@@ -2030,7 +2036,7 @@ function ProjectFormModal({
                         placeholder="0%"
                         min="0"
                         max="100"
-                        step="1"
+                        step="any"
                         value={metadata.paymentPercentage || ''}
                         onChange={(e) => {
                           const pct = parseFloat(e.target.value) || 0;
@@ -4632,6 +4638,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                     <label className="block text-xs font-semibold text-muted-foreground mb-1">{isRtl ? 'المبلغ الإجمالي الخاضع للضريبة' : 'Lump Sum Price'}</label>
                     <input
                       type="number"
+                      step="any"
                       value={quotation.lumpSumPrice || 0}
                       onChange={(e) => setQuotation({ ...quotation, lumpSumPrice: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-background"
@@ -4709,6 +4716,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                             <td className="p-2">
                               <input
                                 type="number"
+                                step="any"
                                 value={item.quantity}
                                 onChange={(e) => {
                                   const items = [...quotation.items];
@@ -4722,6 +4730,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                             <td className="p-2">
                               <input
                                 type="number"
+                                step="any"
                                 value={item.unitPrice}
                                 onChange={(e) => {
                                   const items = [...quotation.items];
@@ -4785,6 +4794,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                   <label className="block text-xs font-semibold text-muted-foreground mb-1">{isRtl ? 'نسبة ضريبة القيمة المضافة (%)' : 'VAT Rate (%)'}</label>
                   <input
                     type="number"
+                    step="any"
                     value={quotation.vatRate || 0}
                     onChange={(e) => setQuotation({ ...quotation, vatRate: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-background"
@@ -4794,6 +4804,7 @@ export function ProjectDetailsPage(): React.ReactElement {
                   <label className="block text-xs font-semibold text-muted-foreground mb-1">{isRtl ? 'قيمة الخصم (اختياري)' : 'Discount Amount (Optional)'}</label>
                   <input
                     type="number"
+                    step="any"
                     value={quotation.discount || 0}
                     onChange={(e) => setQuotation({ ...quotation, discount: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-background"
