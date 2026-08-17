@@ -413,10 +413,11 @@ function PlaceholderWrapper({
             <div className="w-full flex items-center justify-center overflow-hidden py-1">
               <DmcLogo className="w-full max-w-[210px]" />
             </div>
-            <div className="mt-2.5 w-full flex items-center justify-center gap-2 text-[11px] text-muted-foreground font-semibold px-0.5">
-              <span className="font-bold text-foreground/80">{isRtl ? 'مساحة ديسك برو' : 'MesahaDesk pro'}</span>
-              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded-full font-mono">{user?.role || 'Admin'}</span>
-            </div>
+            {user?.role && (
+              <div className="mt-2 w-full flex items-center justify-center text-[11px] font-semibold px-0.5">
+                <span className="text-[10px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-mono font-bold tracking-wide">{user.role}</span>
+              </div>
+            )}
           </div>
 
           <nav className="space-y-1">
