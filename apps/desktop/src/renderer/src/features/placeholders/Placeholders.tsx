@@ -69,7 +69,7 @@ export function DmcLogo({ className = "", isCompact = false }: { className?: str
       <img
         src={DMC_LOGO_BASE64}
         alt="DMC للاستشارات الهندسية - Engineering Consultancy"
-        className={`object-contain pointer-events-none drop-shadow-sm transition-all rounded-lg bg-white/95 p-1 border border-border/40 ${
+        className={`object-contain pointer-events-none transition-all ${
           isCompact ? 'h-8 max-w-[130px]' : 'h-10 max-w-[170px]'
         }`}
       />
@@ -6342,7 +6342,7 @@ export function LoginPage(): React.ReactElement {
           {/* Logo & Branding */}
           <div className="space-y-3">
             <div className="flex justify-center text-[#dfceb3]">
-              <DmcLogo className="h-12" />
+              <DmcLogo className="h-12 [filter:brightness(0)_invert(1)] opacity-95" />
             </div>
             <div className="h-[1px] bg-[#dfceb3]/20 w-24 mx-auto my-3" />
             <h3 className="text-xs text-center text-[#dfceb3]/80 font-medium">
