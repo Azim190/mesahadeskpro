@@ -65,12 +65,12 @@ export function getProgressColor(progress: number): string {
 // Dar Makkah (DMC) Official Corporate Logo Component
 export function DmcLogo({ className = "", isCompact = false }: { className?: string; isCompact?: boolean }): React.ReactElement {
   return (
-    <div className={`inline-flex items-center select-none ${className}`}>
+    <div className={`inline-flex items-center justify-center select-none ${className}`}>
       <img
         src={DMC_LOGO_BASE64}
         alt="DMC للاستشارات الهندسية - Engineering Consultancy"
-        className={`object-contain pointer-events-none transition-all ${
-          isCompact ? 'h-8 max-w-[130px]' : 'h-10 max-w-[170px]'
+        className={`w-full object-contain pointer-events-none transition-all ${
+          isCompact ? 'h-9 max-w-[150px]' : 'h-14 max-w-[240px]'
         }`}
       />
     </div>
@@ -409,9 +409,11 @@ function PlaceholderWrapper({
       {/* Sidebar navigation */}
       <aside className="w-full md:w-64 bg-card border-e border-border p-6 flex flex-col justify-between shadow-sm print:hidden">
         <div>
-          <div className="mb-8 pb-5 border-b border-border/70">
-            <DmcLogo className="text-primary" />
-            <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground font-semibold px-0.5">
+          <div className="mb-6 pb-4 border-b border-border/70">
+            <div className="w-full flex items-center justify-start overflow-hidden py-1">
+              <DmcLogo className="w-full max-w-[210px]" />
+            </div>
+            <div className="mt-2.5 flex items-center justify-between text-[11px] text-muted-foreground font-semibold px-0.5">
               <span>{isRtl ? 'قسم المساحة الهندسية' : 'Surveying Dept.'}</span>
               <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded-full font-mono">{user?.role || 'Admin'}</span>
             </div>
@@ -6341,8 +6343,8 @@ export function LoginPage(): React.ReactElement {
           
           {/* Logo & Branding */}
           <div className="space-y-3">
-            <div className="flex justify-center text-[#dfceb3]">
-              <DmcLogo className="h-12 [filter:brightness(0)_invert(1)] opacity-95" />
+            <div className="flex justify-center text-[#dfceb3] py-2">
+              <DmcLogo className="h-14 w-full max-w-[200px] [filter:brightness(0)_invert(1)] opacity-95" />
             </div>
             <div className="h-[1px] bg-[#dfceb3]/20 w-24 mx-auto my-3" />
             <h3 className="text-xs text-center text-[#dfceb3]/80 font-medium">
@@ -6420,7 +6422,7 @@ export function LoginPage(): React.ReactElement {
         <div className="hidden md:flex w-[55%] relative overflow-hidden bg-[#dfceb3] text-[#0b2034] p-10 flex-col items-center justify-center text-center">
           <div className="survey-grid-bg absolute inset-0 opacity-20 pointer-events-none" />
           <div className="relative z-10 flex flex-col items-center space-y-6">
-            <DmcLogo className="scale-150 transform text-[#0b2034] mb-4" />
+            <DmcLogo className="h-20 w-full max-w-[280px] mb-3" />
             <div className="h-1 w-16 bg-[#0b2034] rounded-full my-2" />
             <h3 className="text-xl font-black tracking-tight text-[#0b2034]">
               {isRtl ? 'حلول مساحية هندسية متكاملة' : 'Integrated Surveying & Engineering Solutions'}
