@@ -499,22 +499,24 @@ function PlaceholderWrapper({
               <FileSignature className="h-4.5 w-4.5 text-muted-foreground" />
               <span>{t('nav.contracts')}</span>
             </Link>
-            <div className="pt-4 border-t border-border mt-4">
-              <Link
-                to="/settings/users"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all"
-              >
-                <Users className="h-4.5 w-4.5 text-muted-foreground" />
-                <span>{t('nav.users')}</span>
-              </Link>
-              <Link
-                to="/settings/general"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all"
-              >
-                <Settings className="h-4.5 w-4.5 text-muted-foreground" />
-                <span>{t('nav.general')}</span>
-              </Link>
-            </div>
+            {user?.role === 'Admin' && (
+              <div className="pt-4 border-t border-border mt-4">
+                <Link
+                  to="/settings/users"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all"
+                >
+                  <Users className="h-4.5 w-4.5 text-muted-foreground" />
+                  <span>{t('nav.users')}</span>
+                </Link>
+                <Link
+                  to="/settings/general"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all"
+                >
+                  <Settings className="h-4.5 w-4.5 text-muted-foreground" />
+                  <span>{t('nav.general')}</span>
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
 
@@ -6120,8 +6122,22 @@ export function SettingsGeneralPage(): React.ReactElement {
   const [taxNumber, setTaxNumber] = useState('300012345600003');
   const [syncInterval, setSyncInterval] = useState('5');
   const [oneDrivePath, setOneDrivePath] = useState('');
+  const [currentRole, setCurrentRole] = useState<string>('Staff');
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
+    window.api.secureStorage.getItem('user').then((userProfile) => {
+      if (userProfile) {
+        try {
+          const parsed = JSON.parse(userProfile);
+          setCurrentRole(parsed.role || 'Staff');
+        } catch {
+          // ignore
+        }
+      }
+      setRoleLoading(false);
+    });
+
     window.api.localDb.getMetadata('officeName').then((val) => val && setOfficeName(val));
     window.api.localDb.getMetadata('taxNumber').then((val) => val && setTaxNumber(val));
     window.api.localDb.getMetadata('syncInterval').then((val) => val && setSyncInterval(val));
@@ -6133,6 +6149,25 @@ export function SettingsGeneralPage(): React.ReactElement {
       }
     });
   }, []);
+
+  if (!roleLoading && currentRole !== 'Admin') {
+    return (
+      <PlaceholderWrapper title={t('nav.general')} icon={Settings}>
+        <div className="border border-destructive/20 bg-destructive/5 text-destructive p-6 rounded-2xl flex flex-col items-center justify-center space-y-2 text-center shadow-sm">
+          <span className="text-xl">⚠️</span>
+          <h4 className="font-bold text-md">{isRtl ? 'غير مصرح لك بالوصول' : 'Access Denied'}</h4>
+          <p className="text-xs max-w-sm">
+            {isRtl
+              ? 'فقط المشرفين (Admin) مخولين بالوصول إلى الإعدادات العامة وإدارتها.'
+              : 'Only system Administrators are authorized to view and modify General Settings.'}
+          </p>
+          <Link to="/dashboard" className="text-primary hover:underline text-xs font-semibold pt-2">
+            {isRtl ? 'العودة للوحة التحكم' : 'Return to Dashboard'}
+          </Link>
+        </div>
+      </PlaceholderWrapper>
+    );
+  }
 
   const handleSave = async () => {
     try {
