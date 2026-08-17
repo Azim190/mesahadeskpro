@@ -7172,7 +7172,7 @@ export function MasterLogPage(): React.ReactElement {
                           ✎
                         </button>
                         <button
-                          onClick={() => handleDeleteProject(project.id)}
+                          onClick={() => setDeleteProjectTarget(project)}
                           className="p-1 bg-destructive/10 text-destructive border border-destructive/20 rounded hover:bg-destructive/20 transition-all text-xs"
                           title={isRtl ? 'حذف المشروع' : 'Delete Project'}
                         >
@@ -7510,7 +7510,7 @@ export function ContractsPage(): React.ReactElement {
                             ✎
                           </button>
                           <button
-                            onClick={() => handleDeleteContract(contract.id)}
+                            onClick={() => setDeleteContractTarget(contract)}
                             className="p-1 bg-destructive/10 text-destructive border border-destructive/20 rounded hover:bg-destructive/20 transition-all text-xs"
                             title={isRtl ? 'حذف العقد' : 'Delete Contract'}
                           >

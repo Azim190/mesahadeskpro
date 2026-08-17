@@ -179,14 +179,23 @@ app.whenReady().then(() => {
 
   ipcMain.handle('dialog:confirm', async (_event, options: { message: string; title?: string; buttons?: string[] }) => {
     const focusedWindow = BrowserWindow.getFocusedWindow();
-    const result = await dialog.showMessageBox(focusedWindow || undefined, {
-      type: 'question',
-      buttons: options.buttons || ['Yes', 'No'],
-      defaultId: 0,
-      cancelId: 1,
-      title: options.title || 'Confirm',
-      message: options.message,
-    });
+    const result = focusedWindow
+      ? await dialog.showMessageBox(focusedWindow, {
+          type: 'question',
+          buttons: options.buttons || ['Yes', 'No'],
+          defaultId: 0,
+          cancelId: 1,
+          title: options.title || 'Confirm',
+          message: options.message,
+        })
+      : await dialog.showMessageBox({
+          type: 'question',
+          buttons: options.buttons || ['Yes', 'No'],
+          defaultId: 0,
+          cancelId: 1,
+          title: options.title || 'Confirm',
+          message: options.message,
+        });
     return result.response === 0;
   });
 
