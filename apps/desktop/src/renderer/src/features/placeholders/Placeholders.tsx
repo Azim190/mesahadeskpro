@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../app/ThemeProvider';
 import { useSync } from '../../shared/hooks/useSync';
 import { DMC_STAMP_BASE64 } from '../../assets/stampData';
-import { DMC_LOGO_BASE64 } from '../../assets/logoData';
+import { DMC_LOGO_BASE64, DMC_LOGO_DARK_BASE64 } from '../../assets/logoData';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -62,13 +62,25 @@ export function getProgressColor(progress: number): string {
   return 'bg-green-700'; // Dark Green
 }
 
-// Dar Makkah (DMC) Official Corporate Logo Component
-export function DmcLogo({ className = "", isCompact = false }: { className?: string; isCompact?: boolean }): React.ReactElement {
+// MesahaDesk pro Official Corporate Logo Component (Adaptive for Light & Dark modes)
+export function DmcLogo({
+  className = "",
+  isCompact = false,
+  forceTheme
+}: {
+  className?: string;
+  isCompact?: boolean;
+  forceTheme?: 'light' | 'dark';
+}): React.ReactElement {
+  const { theme } = useTheme();
+  const effectiveTheme = forceTheme || theme;
+  const isDark = effectiveTheme === 'dark';
+
   return (
     <div className={`inline-flex items-center justify-center select-none ${className}`}>
       <img
-        src={DMC_LOGO_BASE64}
-        alt="DMC للاستشارات الهندسية - Engineering Consultancy"
+        src={isDark ? DMC_LOGO_DARK_BASE64 : DMC_LOGO_BASE64}
+        alt="MesahaDesk pro — مساحة ديسك برو"
         className={`w-full object-contain pointer-events-none transition-all ${
           isCompact ? 'h-9 max-w-[150px]' : 'h-14 max-w-[240px]'
         }`}
@@ -6345,7 +6357,7 @@ export function LoginPage(): React.ReactElement {
           {/* Logo & Branding */}
           <div className="space-y-3">
             <div className="flex justify-center text-[#dfceb3] py-2">
-              <DmcLogo className="h-14 w-full max-w-[200px] [filter:brightness(0)_invert(1)] opacity-95" />
+              <DmcLogo forceTheme="dark" className="h-14 w-full max-w-[200px]" />
             </div>
             <div className="h-[1px] bg-[#dfceb3]/20 w-24 mx-auto my-3" />
             <h3 className="text-xs text-center text-[#dfceb3]/90 font-bold tracking-wide">
