@@ -414,7 +414,7 @@ function PlaceholderWrapper({
               <DmcLogo className="w-full max-w-[210px]" />
             </div>
             <div className="mt-2.5 flex items-center justify-between text-[11px] text-muted-foreground font-semibold px-0.5">
-              <span>{isRtl ? 'قسم المساحة الهندسية' : 'Surveying Dept.'}</span>
+              <span className="font-bold text-foreground/80">{isRtl ? 'مساحة ديسك برو' : 'MesahaDesk pro'}</span>
               <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.2 rounded-full font-mono">{user?.role || 'Admin'}</span>
             </div>
           </div>
@@ -6347,8 +6347,8 @@ export function LoginPage(): React.ReactElement {
               <DmcLogo className="h-14 w-full max-w-[200px] [filter:brightness(0)_invert(1)] opacity-95" />
             </div>
             <div className="h-[1px] bg-[#dfceb3]/20 w-24 mx-auto my-3" />
-            <h3 className="text-xs text-center text-[#dfceb3]/80 font-medium">
-              {isRtl ? 'نظام إدارة قسم المساحة' : 'Surveying Department Management'}
+            <h3 className="text-xs text-center text-[#dfceb3]/90 font-bold tracking-wide">
+              {isRtl ? 'مساحة ديسك برو' : 'MesahaDesk pro'}
             </h3>
           </div>
 
