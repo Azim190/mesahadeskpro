@@ -6465,15 +6465,20 @@ export function LoginPage(): React.ReactElement {
           </form>
 
           {/* Footer Controls */}
-          <div className="flex justify-between items-center text-xs text-[#dfceb3]/70 pt-2">
-            <button
-              type="button"
-              onClick={() => i18n.changeLanguage(isRtl ? 'en' : 'ar')}
-              className="hover:text-white font-bold transition-all"
-            >
-              {isRtl ? 'English' : 'العربية'}
-            </button>
-            <span className="font-mono text-[10px]">v1.2.0</span>
+          <div className="space-y-2 pt-3 border-t border-[#dfceb3]/10">
+            <div className="flex justify-between items-center text-xs text-[#dfceb3]/70">
+              <button
+                type="button"
+                onClick={() => i18n.changeLanguage(isRtl ? 'en' : 'ar')}
+                className="hover:text-white font-bold transition-all"
+              >
+                {isRtl ? 'English' : 'العربية'}
+              </button>
+              <span className="font-mono text-[10px]">v1.2.0</span>
+            </div>
+            <div className="text-[10px] text-center text-[#dfceb3]/50 font-medium tracking-wide">
+              {isRtl ? 'جميع الحقوق محفوظة. AFIACore 2026' : 'All rights reserved. AFIACore 2026'}
+            </div>
           </div>
         </div>
 
