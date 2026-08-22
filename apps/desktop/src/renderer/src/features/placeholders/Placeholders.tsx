@@ -6483,13 +6483,16 @@ export function LoginPage(): React.ReactElement {
           <div className="relative z-10 flex flex-col items-center space-y-6">
             <DmcLogo className="h-20 w-full max-w-[280px] mb-3" />
             <div className="h-1 w-16 bg-[#0b2034] rounded-full my-2" />
-            <h3 className="text-xl font-black tracking-tight text-[#0b2034]">
-              {isRtl ? 'حلول مساحية هندسية متكاملة' : 'Integrated Surveying & Engineering Solutions'}
-            </h3>
-            <p className="text-xs font-semibold text-[#0b2034]/80 max-w-sm leading-relaxed">
-              {isRtl
-                ? 'دار مكة للاستشارات الهندسية — تأسست عام 1986. المنظومة الذكية لإدارة الرفع والتنزيل المساحي، القرارات المساحية ومعاملات منصة بلدي.'
-                : 'Dar Makkah Engineering Consultancy — Established 1986. Surveying, municipal decisions, and Baladi transactions workspace.'}
+            <p className="text-sm font-semibold text-[#0b2034]/90 max-w-sm leading-relaxed">
+              {isRtl ? (
+                <>
+                  <strong className="font-extrabold text-[#0b2034]">مساحة ديسك برو (MesahaDesk Pro)</strong> هو حل متكامل لإدارة العمليات المساحية للشركات والمكاتب الهندسية.
+                </>
+              ) : (
+                <>
+                  <strong className="font-extrabold text-[#0b2034]">MesahaDesk Pro</strong> is an integrated solution for managing surveying operations for engineering companies and offices.
+                </>
+              )}
             </p>
           </div>
         </div>
