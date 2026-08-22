@@ -6486,7 +6486,7 @@ export function LoginPage(): React.ReactElement {
             <p className="text-sm font-semibold text-[#0b2034]/90 max-w-sm leading-relaxed">
               {isRtl ? (
                 <>
-                  <strong className="font-extrabold text-[#0b2034]">مساحة ديسك برو (MesahaDesk Pro)</strong> هو حل متكامل لإدارة العمليات المساحية للشركات والمكاتب الهندسية.
+                  <strong className="font-extrabold text-[#0b2034]">تطبيق مساحة ديسك برو</strong> برنامج حلول متكاملة لإدارة الأعمال المساحية للشركات والمكاتب الهندسية.
                 </>
               ) : (
                 <>
