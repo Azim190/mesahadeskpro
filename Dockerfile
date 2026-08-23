@@ -42,6 +42,11 @@ COPY --from=builder /app/packages/shared-types ./packages/shared-types
 COPY --from=builder /app/apps/backend ./apps/backend
 COPY --from=builder /app/apps/desktop/out/renderer ./apps/desktop/out/renderer
 
+# Create persistent data directory
+RUN mkdir -p /data /app/data
+
+VOLUME ["/data", "/app/data"]
+
 EXPOSE 3000
 
 CMD ["node", "apps/backend/dist/main.js"]

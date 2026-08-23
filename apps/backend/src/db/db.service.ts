@@ -107,15 +107,22 @@ export class DatabaseService implements OnModuleInit {
       (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'))
     ) {
       try {
-        const pool = new pg.Pool({ connectionString: dbUrl });
+        const pool = new pg.Pool({
+          connectionString: dbUrl,
+          ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
+        });
+
+        // Initialize Postgres tables and seed defaults if empty
+        await this.initializePostgreSql(pool);
+
         this.db = drizzle(pool, { schema });
         this.logger.log(
-          'Successfully connected to PostgreSQL using Drizzle ORM',
+          'Successfully connected to PostgreSQL database using Drizzle ORM',
         );
         return;
       } catch (error) {
         this.logger.error(
-          'Failed to connect to PostgreSQL, falling back to persistent SQLite database',
+          'Failed to connect or initialize PostgreSQL database, falling back to persistent SQLite database',
           error,
         );
       }
@@ -127,11 +134,222 @@ export class DatabaseService implements OnModuleInit {
     this.initializeSqliteDb();
   }
 
+  private async initializePostgreSql(pool: pg.Pool): Promise<void> {
+    // Create PostgreSQL tables if not exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tenants (
+        id UUID PRIMARY KEY,
+        office_name TEXT NOT NULL,
+        logo_url TEXT,
+        primary_color TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS roles (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        permissions JSONB NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        full_name TEXT NOT NULL,
+        iqama_id TEXT NOT NULL UNIQUE,
+        phone_number TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        role_id UUID NOT NULL REFERENCES roles(id),
+        is_active BOOLEAN DEFAULT true NOT NULL,
+        last_login_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS otp_verifications (
+        id UUID PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        code_hash TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        attempts INTEGER DEFAULT 0 NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS clients (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        phone_number TEXT NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS projects (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        client_id UUID NOT NULL REFERENCES clients(id) ON DELETE RESTRICT,
+        project_number TEXT NOT NULL UNIQUE,
+        work_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        progress INTEGER DEFAULT 0 NOT NULL,
+        location_lat TEXT,
+        location_lng TEXT,
+        location_text TEXT,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS project_details (
+        id UUID PRIMARY KEY,
+        project_id UUID NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
+        work_type TEXT NOT NULL,
+        details_json JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id UUID PRIMARY KEY,
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        action TEXT NOT NULL,
+        entity_type TEXT,
+        entity_id TEXT,
+        details_json JSONB,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+      );
+    `);
+
+    // Seed initial tenant and roles if not exists
+    const tenantId = '11111111-1111-1111-1111-111111111111';
+    const tenantRes = await pool.query(
+      'SELECT id FROM tenants WHERE id = $1',
+      [tenantId],
+    );
+    if (tenantRes.rowCount === 0) {
+      await pool.query(
+        'INSERT INTO tenants (id, office_name) VALUES ($1, $2)',
+        [tenantId, 'Masaha Surveying Office'],
+      );
+    }
+
+    const adminRoleId = '22222222-2222-2222-2222-222222222222';
+    const managerRoleId = '33333333-3333-3333-3333-333333333333';
+    const staffRoleId = '44444444-4444-4444-4444-444444444444';
+
+    await pool.query(
+      `INSERT INTO roles (id, tenant_id, name, permissions)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        adminRoleId,
+        tenantId,
+        UserRole.ADMIN,
+        JSON.stringify({ manageUsers: true, viewAll: true, editAll: true }),
+      ],
+    );
+    await pool.query(
+      `INSERT INTO roles (id, tenant_id, name, permissions)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        managerRoleId,
+        tenantId,
+        UserRole.DEPARTMENT_MANAGER,
+        JSON.stringify({ manageUsers: false, viewAll: true, editAll: true }),
+      ],
+    );
+    await pool.query(
+      `INSERT INTO roles (id, tenant_id, name, permissions)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        staffRoleId,
+        tenantId,
+        UserRole.STAFF,
+        JSON.stringify({ manageUsers: false, viewAll: true, editAll: false }),
+      ],
+    );
+
+    // Seed default users only if users table is empty
+    const usersRes = await pool.query('SELECT count(*) as count FROM users');
+    const count = parseInt(usersRes.rows[0]?.count || '0', 10);
+    if (count === 0) {
+      const salt = bcrypt.genSaltSync(10);
+      const passwordHash = bcrypt.hashSync('Password123', salt);
+
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+        [
+          'ad111111-1111-1111-1111-111111111111',
+          tenantId,
+          'Admin User',
+          'maxpro190@gmail.com',
+          '0500000001',
+          passwordHash,
+          adminRoleId,
+        ],
+      );
+
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+        [
+          'ma222222-2222-2222-2222-222222222222',
+          tenantId,
+          'Manager User',
+          'manager@masahadesk.com',
+          '0500000002',
+          passwordHash,
+          managerRoleId,
+        ],
+      );
+
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+        [
+          'st333333-3333-3333-3333-333333333333',
+          tenantId,
+          'Staff Surveyor',
+          'staff@masahadesk.com',
+          '0500000003',
+          passwordHash,
+          staffRoleId,
+        ],
+      );
+
+      this.logger.log(
+        'Seeded PostgreSQL database with initial default accounts (Password123):',
+      );
+      this.logger.log('- Admin Email: maxpro190@gmail.com');
+      this.logger.log('- Manager Email: manager@masahadesk.com');
+      this.logger.log('- Staff Email: staff@masahadesk.com');
+    }
+  }
+
+  private getSqliteDbPath(): string {
+    if (process.env.SQLITE_DB_PATH) return process.env.SQLITE_DB_PATH;
+    if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+      return join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'masaha_backend.db');
+    }
+    if (fs.existsSync('/data')) {
+      try {
+        fs.accessSync('/data', fs.constants.W_OK);
+        return '/data/masaha_backend.db';
+      } catch {
+        // ignore
+      }
+    }
+    return join(process.cwd(), 'data', 'masaha_backend.db');
+  }
+
   private initializeSqliteDb(): void {
     try {
-      const dbPath =
-        process.env.SQLITE_DB_PATH ||
-        join(process.cwd(), 'data', 'masaha_backend.db');
+      const dbPath = this.getSqliteDbPath();
       
       const dir = dirname(dbPath);
       if (!fs.existsSync(dir)) {
@@ -471,6 +689,7 @@ export class DatabaseService implements OnModuleInit {
   }): Promise<void> {
     if (this.db) {
       await this.db.insert(schema.auditLogs).values({
+        id: crypto.randomUUID(),
         tenantId: log.tenantId,
         userId: log.userId,
         action: log.action,
@@ -510,6 +729,7 @@ export class DatabaseService implements OnModuleInit {
         .delete(schema.otpVerifications)
         .where(eq(schema.otpVerifications.userId, userId));
       await this.db.insert(schema.otpVerifications).values({
+        id: crypto.randomUUID(),
         userId,
         codeHash,
         expiresAt,
