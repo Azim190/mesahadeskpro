@@ -42,14 +42,7 @@ interface ProjectDetailsPayload {
   createdAt: string;
   updatedAt: string;
 }
-
-const getApiUrl = (): string => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
-    return window.location.origin;
-  }
-  return 'http://localhost:3000';
-};
+import { getApiUrl } from '../apiUrl';
 
 export function useSync() {
   const [status, setStatus] = useState<SyncStatus>({

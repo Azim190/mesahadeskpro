@@ -43,15 +43,12 @@ import {
   ClipboardList,
   AlertTriangle,
   Loader2,
+  Database,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
-
-const getApiUrl = (): string => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) {
-    return window.location.origin;
-  }
-  return 'http://localhost:3000';
-};
+import { getApiUrl, setApiUrl, checkServerHealth } from '../../shared/apiUrl';
+import { ServerConnectionModal } from '../../shared/components/ServerConnectionModal';
 
 // Progress Color Function based on Section 6 bands
 export function getProgressColor(progress: number): string {
@@ -6136,6 +6133,10 @@ export function SettingsGeneralPage(): React.ReactElement {
   const [currentRole, setCurrentRole] = useState<string>('Staff');
   const [roleLoading, setRoleLoading] = useState(true);
 
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
+  const [serverUrl, setServerUrl] = useState(getApiUrl());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     window.api.secureStorage.getItem('user').then((userProfile) => {
       if (userProfile) {
@@ -6193,75 +6194,268 @@ export function SettingsGeneralPage(): React.ReactElement {
     }
   };
 
+  const handleExportBackup = async () => {
+    try {
+      const clients = await window.api.localDb.getClients();
+      const projects = (await window.api.localDb.getProjects()) as ProjectItem[];
+      const detailsList: unknown[] = [];
+      for (const p of projects) {
+        const d = await window.api.localDb.getProjectDetails(p.id);
+        if (d) detailsList.push(d);
+      }
+      const backupData = {
+        app: 'MesahaDesk Pro',
+        version: '1.2.0',
+        exportedAt: new Date().toISOString(),
+        clients,
+        projects,
+        projectDetails: detailsList,
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `masahadesk_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Backup export failed:', err);
+      alert(isRtl ? 'حدث خطأ أثناء تصدير النسخة الاحتياطية' : 'Failed to export backup');
+    }
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const data = JSON.parse(content);
+        if (!Array.isArray(data.clients) || !Array.isArray(data.projects)) {
+          throw new Error('Invalid backup format');
+        }
+
+        let importedClients = 0;
+        let importedProjects = 0;
+        let importedDetails = 0;
+
+        for (const c of data.clients) {
+          await window.api.localDb.upsertClient(c, true);
+          importedClients++;
+        }
+        for (const p of data.projects) {
+          await window.api.localDb.upsertProject(p, true);
+          importedProjects++;
+        }
+        if (Array.isArray(data.projectDetails)) {
+          for (const d of data.projectDetails) {
+            await window.api.localDb.upsertProjectDetails(d, true);
+            importedDetails++;
+          }
+        }
+
+        alert(
+          isRtl
+            ? `تم استيراد ${importedProjects} مشروع و ${importedClients} عميل بنجاح!`
+            : `Successfully imported ${importedProjects} projects and ${importedClients} clients!`
+        );
+      } catch (err) {
+        console.error('Backup import failed:', err);
+        alert(isRtl ? 'ملف النسخة الاحتياطية غير صالح أو تالف' : 'Invalid or corrupted backup file');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <PlaceholderWrapper title={t('nav.general')} icon={Settings}>
-      <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-6 max-w-2xl">
-        <div>
-          <h3 className="text-lg font-bold">{isRtl ? 'الإعدادات العامة للبلدية/المكتب' : 'General Office Settings'}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {isRtl ? 'تخصيص الهوية البصرية، شعار المكتب، وإعدادات المزامنة' : 'Configure visual branding, office logo, and sync behavior'}
-          </p>
-        </div>
+      <div className="space-y-6 max-w-3xl">
+        {/* Office & Branding Settings Card */}
+        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-6">
+          <div>
+            <h3 className="text-lg font-bold">{isRtl ? 'الإعدادات العامة للبلدية/المكتب' : 'General Office Settings'}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isRtl ? 'تخصيص الهوية البصرية، شعار المكتب، وإعدادات المزامنة' : 'Configure visual branding, office logo, and sync behavior'}
+            </p>
+          </div>
 
-        <div className="border border-border rounded-xl p-4 bg-muted/20 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'اسم المكتب المساحي' : 'Office Branding Name'}</span>
-              <input
-                type="text"
-                value={officeName}
-                onChange={(e) => setOfficeName(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none"
-              />
+          <div className="border border-border rounded-xl p-4 bg-muted/20 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'اسم المكتب المساحي' : 'Office Branding Name'}</span>
+                <input
+                  type="text"
+                  value={officeName}
+                  onChange={(e) => setOfficeName(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none"
+                />
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'الرقم الضريبي للمكتب' : 'Tax Registration Number'}</span>
+                <input
+                  type="text"
+                  value={taxNumber}
+                  onChange={(e) => setTaxNumber(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none font-mono"
+                />
+              </div>
             </div>
-            <div>
-              <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'الرقم الضريبي للمكتب' : 'Tax Registration Number'}</span>
+
+            <div className="pt-2">
+              <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'مجلد مزامنة ون درايف المشترك' : 'OneDrive Shared Folder Path'}</span>
               <input
                 type="text"
-                value={taxNumber}
-                onChange={(e) => setTaxNumber(e.target.value)}
+                value={oneDrivePath}
+                onChange={(e) => setOneDrivePath(e.target.value)}
+                placeholder="e.g. C:\Users\user\OneDrive\قسم أعمال المساحة"
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none font-mono"
               />
             </div>
+
+            <div className="pt-2 col-span-2">
+              <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'تواتر المزامنة التلقائية (دقائق)' : 'Sync Check Interval (minutes)'}</span>
+              <select
+                value={syncInterval}
+                onChange={(e) => setSyncInterval(e.target.value)}
+                className="px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none"
+              >
+                <option value="1">1 {isRtl ? 'دقيقة' : 'minute'}</option>
+                <option value="5">5 {isRtl ? 'دقائق' : 'minutes'}</option>
+                <option value="15">15 {isRtl ? 'دقيقة' : 'minutes'}</option>
+              </select>
+            </div>
           </div>
 
-          <div className="pt-2">
-            <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'مجلد مزامنة ون درايف المشترك' : 'OneDrive Shared Folder Path'}</span>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/95 shadow-sm"
+            >
+              {t('common.save')}
+            </button>
+          </div>
+        </div>
+
+        {/* Central Server & Database Connection Card */}
+        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold">{isRtl ? 'الخادم وقاعدة البيانات المركزية' : 'Central Server & Database'}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {isRtl
+                    ? 'ربط التطبيق بقاعدة بيانات مشتركة لمزامنة البيانات والمستخدمين بين كافة الأجهزة'
+                    : 'Connect app to a central database to sync users and projects across all devices'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConnectionModalOpen(true)}
+              className="px-3.5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/90 transition shadow-sm flex items-center gap-1.5"
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>{isRtl ? 'تعديل الاتصال' : 'Configure Connection'}</span>
+            </button>
+          </div>
+
+          <div className="p-4 rounded-xl bg-muted/20 border border-border flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+                {isRtl ? 'رابط الخادم النشط حالياً' : 'Active Server Endpoint'}
+              </span>
+              <div className="font-mono text-xs font-semibold text-foreground">
+                {serverUrl}
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isRtl ? 'مضبوط' : 'Configured'}
+            </span>
+          </div>
+        </div>
+
+        {/* Database Backup & Restore Card */}
+        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold">{isRtl ? 'النسخ الاحتياطي واستعادة البيانات' : 'Database Backup & Migration'}</h3>
+              <p className="text-xs text-muted-foreground">
+                {isRtl
+                  ? 'تصدير أو استيراد نسخة احتياطية لجميع المشاريع والعملاء لنقلها بين الأجهزة بسهولة'
+                  : 'Export or import backup files to migrate projects and clients between devices easily'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleExportBackup}
+              className="p-4 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition flex items-center gap-3 text-start"
+            >
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Download className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-foreground">
+                  {isRtl ? 'تصدير نسخة احتياطية (JSON)' : 'Export Full Backup (JSON)'}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {isRtl ? 'حفظ كافة المشاريع والعملاء كملف' : 'Save all projects and clients to a file'}
+                </span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-4 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition flex items-center gap-3 text-start"
+            >
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                <FileUp className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-foreground">
+                  {isRtl ? 'استيراد واسترجاع نسخة احتياطية' : 'Import & Restore Backup'}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {isRtl ? 'تحميل بيانات سابقة من ملف JSON' : 'Load data from a backup JSON file'}
+                </span>
+              </div>
+            </button>
+
             <input
-              type="text"
-              value={oneDrivePath}
-              onChange={(e) => setOneDrivePath(e.target.value)}
-              placeholder="e.g. C:\Users\user\OneDrive\قسم أعمال المساحة"
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none font-mono"
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImportBackup}
+              accept=".json"
+              className="hidden"
             />
           </div>
-
-          <div className="pt-2 col-span-2">
-            <span className="block text-xs font-bold text-muted-foreground mb-1.5">{isRtl ? 'تواتر المزامنة التلقائية (دقائق)' : 'Sync Check Interval (minutes)'}</span>
-            <select
-              value={syncInterval}
-              onChange={(e) => setSyncInterval(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none"
-            >
-              <option value="1">1 {isRtl ? 'دقيقة' : 'minute'}</option>
-              <option value="5">5 {isRtl ? 'دقائق' : 'minutes'}</option>
-              <option value="15">15 {isRtl ? 'دقيقة' : 'minutes'}</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/95 shadow-sm"
-          >
-            {t('common.save')}
-          </button>
         </div>
       </div>
+
+      <ServerConnectionModal
+        isOpen={connectionModalOpen}
+        onClose={() => setConnectionModalOpen(false)}
+        onSaved={(newUrl) => setServerUrl(newUrl)}
+      />
     </PlaceholderWrapper>
   );
 }
+
 
 // 12. Support
 export function SupportPage(): React.ReactElement {
@@ -6335,6 +6529,7 @@ export function LoginPage(): React.ReactElement {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
 
   useEffect(() => {
     // If already logged in, redirect to dashboard
@@ -6414,8 +6609,19 @@ export function LoginPage(): React.ReactElement {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 my-6">
             {error && (
-              <div className="bg-red-500/20 text-red-100 text-xs p-3.5 rounded-xl border border-red-500/30 font-medium">
-                {error}
+              <div className="bg-red-500/20 text-red-100 text-xs p-3.5 rounded-xl border border-red-500/30 font-medium space-y-2">
+                <div>{error}</div>
+                <div className="text-[11px] text-[#dfceb3] pt-1 border-t border-red-500/20 flex items-center justify-between">
+                  <span>{isRtl ? 'هل تتصل من جهاز آخر؟' : 'Connecting from another device?'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setConnectionModalOpen(true)}
+                    className="underline text-[#dfceb3] font-bold hover:text-white flex items-center gap-1"
+                  >
+                    <Database className="w-3 h-3" />
+                    <span>{isRtl ? 'إعدادات الخادم' : 'Server Settings'}</span>
+                  </button>
+                </div>
               </div>
             )}
             <div>
@@ -6474,6 +6680,14 @@ export function LoginPage(): React.ReactElement {
               >
                 {isRtl ? 'English' : 'العربية'}
               </button>
+              <button
+                type="button"
+                onClick={() => setConnectionModalOpen(true)}
+                className="hover:text-white flex items-center gap-1.5 font-semibold text-[#dfceb3] bg-[#071524] hover:bg-[#193a59] px-2.5 py-1 rounded-lg border border-[#193a59] transition-all text-[11px]"
+              >
+                <Database className="w-3.5 h-3.5 text-[#dfceb3]" />
+                <span>{isRtl ? 'إعدادات الخادم' : 'Server & DB'}</span>
+              </button>
               <span className="font-mono text-[10px]">v1.2.0</span>
             </div>
             <div className="text-[10px] text-center text-[#dfceb3]/50 font-medium tracking-wide">
@@ -6502,6 +6716,12 @@ export function LoginPage(): React.ReactElement {
           </div>
         </div>
       </div>
+
+      <ServerConnectionModal
+        isOpen={connectionModalOpen}
+        onClose={() => setConnectionModalOpen(false)}
+        onSaved={() => setError(null)}
+      />
     </div>
   );
 }

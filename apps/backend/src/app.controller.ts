@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { AppService } from './app.service';
+import { DatabaseService } from './db/db.service';
 import * as fs from 'fs';
 import { join } from 'path';
 import * as os from 'os';
@@ -8,7 +9,10 @@ import { exec } from 'child_process';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly dbService: DatabaseService,
+  ) {}
 
   @Get('api')
   getHello(): string {
@@ -19,6 +23,7 @@ export class AppController {
   getHealth() {
     return {
       status: 'ok',
+      database: this.dbService.getDatabaseInfo(),
       timestamp: new Date().toISOString(),
     };
   }

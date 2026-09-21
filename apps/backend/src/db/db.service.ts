@@ -100,6 +100,13 @@ export class DatabaseService implements OnModuleInit {
   private db: NodePgDatabase<typeof schema> | null = null;
   private sqliteDb: Database.Database | null = null;
 
+  getDatabaseInfo(): { type: 'postgres' | 'sqlite'; isConnected: boolean } {
+    return {
+      type: this.db ? 'postgres' : 'sqlite',
+      isConnected: this.db !== null || this.sqliteDb !== null,
+    };
+  }
+
   async onModuleInit(): Promise<void> {
     const dbUrl = process.env.DATABASE_URL;
     if (
@@ -298,7 +305,7 @@ export class DatabaseService implements OnModuleInit {
         `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
         [
-          'ma222222-2222-2222-2222-222222222222',
+          'ba222222-2222-2222-2222-222222222222',
           tenantId,
           'Manager User',
           'manager@masahadesk.com',
@@ -312,7 +319,7 @@ export class DatabaseService implements OnModuleInit {
         `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
         [
-          'st333333-3333-3333-3333-333333333333',
+          'ca333333-3333-3333-3333-333333333333',
           tenantId,
           'Staff Surveyor',
           'staff@masahadesk.com',
