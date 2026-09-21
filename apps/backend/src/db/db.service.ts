@@ -120,6 +120,16 @@ export class DatabaseService implements OnModuleInit {
         const pool = new pg.Pool({
           connectionString: dbUrl,
           ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
+        });
+
+        // Catch errors on idle clients so the server never crashes on ECONNRESET / pooler disconnects
+        pool.on('error', (err: Error) => {
+          this.logger.warn(
+            `PostgreSQL pool client encountered an error (auto-handled): ${err.message}`,
+          );
         });
 
         // Initialize Postgres tables and seed defaults if empty

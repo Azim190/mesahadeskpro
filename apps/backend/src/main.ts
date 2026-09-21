@@ -21,4 +21,12 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 MasahaDesk Production All-In-One Server listening on port ${port}`);
 }
+process.on('uncaughtException', (err) => {
+  console.error('[Process Safety] Caught unhandled exception (prevented crash):', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process Safety] Caught unhandled rejection (prevented crash):', reason);
+});
+
 void bootstrap();
