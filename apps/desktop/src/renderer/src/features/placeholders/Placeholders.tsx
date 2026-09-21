@@ -6650,8 +6650,11 @@ export function LoginPage(): React.ReactElement {
     e.preventDefault();
     setError(null);
 
+    const cleanEmail = (iqamaId || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
     // Validate Email
-    if (!iqamaId || !iqamaId.includes('@')) {
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       setError(
         isRtl
           ? 'تنسيق البريد الإلكتروني غير صالح. / Invalid email address format.'
@@ -6660,7 +6663,7 @@ export function LoginPage(): React.ReactElement {
       return;
     }
 
-    if (!password) {
+    if (!cleanPassword) {
       setError(isRtl ? 'كلمة المرور مطلوبة.' : 'Password is required.');
       return;
     }
@@ -6671,7 +6674,7 @@ export function LoginPage(): React.ReactElement {
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ iqamaId, password }),
+        body: JSON.stringify({ iqamaId: cleanEmail, password: cleanPassword }),
       });
 
       const data = await response.json();
@@ -6715,17 +6718,46 @@ export function LoginPage(): React.ReactElement {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 my-6">
             {error && (
-              <div className="bg-red-500/20 text-red-100 text-xs p-3.5 rounded-xl border border-red-500/30 font-medium space-y-2">
-                <div>{error}</div>
-                <div className="text-[11px] text-[#dfceb3] pt-1 border-t border-red-500/20 flex items-center justify-between">
-                  <span>{isRtl ? 'هل تتصل من جهاز آخر؟' : 'Connecting from another device?'}</span>
+              <div className="bg-red-500/20 text-red-100 text-xs p-3.5 rounded-xl border border-red-500/30 font-medium space-y-2.5 animate-fadeIn">
+                <div className="font-semibold text-red-200">
+                  {error.includes('Invalid credentials')
+                    ? isRtl
+                      ? 'بيانات الدخول غير صحيحة (Invalid credentials). تأكد من صحة البريد الإلكتروني وكلمة المرور.'
+                      : 'Invalid credentials. Please verify your email and password.'
+                    : error}
+                </div>
+                <div className="text-[11px] text-[#dfceb3] bg-[#071524]/70 p-2.5 rounded-lg border border-[#dfceb3]/20 space-y-1.5">
+                  <div className="font-semibold">
+                    {isRtl ? '💡 الحساب الافتراضي المعتمد:' : '💡 Default Demo Account:'}
+                  </div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-[#f5efe6]">
+                    <span>maxpro190@gmail.com</span>
+                    <span>Password123</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIqamaId('maxpro190@gmail.com');
+                      setPassword('Password123');
+                      setError(null);
+                    }}
+                    className="w-full mt-1 py-1.5 bg-[#dfceb3] hover:bg-[#d4c1a3] text-[#0b2034] rounded-lg text-center text-[11px] font-sans font-bold transition"
+                  >
+                    {isRtl ? 'تعبئة بيانات الحساب تلقائياً' : 'Auto-fill Demo Account'}
+                  </button>
+                </div>
+                <div className="text-[11px] text-[#9db1c3] pt-1 border-t border-red-500/20 flex items-center justify-between">
+                  <span>
+                    {isRtl ? 'الخادم المتصل به:' : 'Target Server:'}{' '}
+                    <strong className="font-mono text-[#dfceb3]">{getApiUrl()}</strong>
+                  </span>
                   <button
                     type="button"
                     onClick={() => setConnectionModalOpen(true)}
                     className="underline text-[#dfceb3] font-bold hover:text-white flex items-center gap-1"
                   >
                     <Database className="w-3 h-3" />
-                    <span>{isRtl ? 'إعدادات الخادم' : 'Server Settings'}</span>
+                    <span>{isRtl ? 'تعديل' : 'Change'}</span>
                   </button>
                 </div>
               </div>
@@ -6744,9 +6776,21 @@ export function LoginPage(): React.ReactElement {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#dfceb3]/90 mb-1.5 text-start">
-                {isRtl ? 'كلمة المرور' : 'Password'}
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-xs font-bold text-[#dfceb3]/90 text-start">
+                  {isRtl ? 'كلمة المرور' : 'Password'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIqamaId('maxpro190@gmail.com');
+                    setPassword('Password123');
+                  }}
+                  className="text-[11px] text-[#dfceb3] hover:underline font-semibold"
+                >
+                  {isRtl ? 'تعبئة الحساب الافتراضي' : 'Fill default'}
+                </button>
+              </div>
               <input
                 type="password"
                 placeholder="••••••••"

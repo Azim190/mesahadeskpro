@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from './schema';
-import { eq, gt, and } from 'drizzle-orm';
+import { eq, gt, and, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -604,11 +604,12 @@ export class DatabaseService implements OnModuleInit {
   async findUserByIqamaId(
     iqamaId: string,
   ): Promise<(DbUser & { role: UserRole }) | null> {
+    const clean = (iqamaId || '').trim().toLowerCase();
     if (this.db) {
       const results = await this.db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.iqamaId, iqamaId))
+        .where(sql`LOWER(${schema.users.iqamaId}) = ${clean}`)
         .limit(1);
       if (results.length === 0) return null;
       const roleResult = await this.db
@@ -629,11 +630,11 @@ export class DatabaseService implements OnModuleInit {
           SELECT u.*, r.name as roleName
           FROM users u
           LEFT JOIN roles r ON u.roleId = r.id
-          WHERE u.iqamaId = ?
+          WHERE LOWER(u.iqamaId) = ?
           LIMIT 1
         `,
         )
-        .get(iqamaId) as any | undefined;
+        .get(clean) as any | undefined;
 
       if (!row) return null;
       return {
