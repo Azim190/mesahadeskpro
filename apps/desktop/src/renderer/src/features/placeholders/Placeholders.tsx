@@ -5541,6 +5541,8 @@ export function SettingsUsersPage(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string>('Staff');
+  const [currentUserIqama, setCurrentUserIqama] = useState<string>('');
+  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Form states
   const [addOpen, setAddOpen] = useState(false);
@@ -5569,6 +5571,7 @@ export function SettingsUsersPage(): React.ReactElement {
       if (userProfile) {
         const parsed = JSON.parse(userProfile);
         setCurrentRole(parsed.role || 'Staff');
+        setCurrentUserIqama(parsed.iqamaId || '');
         if (parsed.role !== 'Admin') {
           setLoading(false);
           return;
@@ -5708,6 +5711,7 @@ export function SettingsUsersPage(): React.ReactElement {
   const handleDeactivate = async () => {
     if (!deactivateUserTarget) return;
     setIsDeactivatingUser(true);
+    setError(null);
     try {
       const token = await window.api.secureStorage.getItem('accessToken');
       const apiUrl = getApiUrl();
@@ -5719,7 +5723,7 @@ export function SettingsUsersPage(): React.ReactElement {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to deactivate user');
+        throw new Error('Failed to deactivate user / فشل تعطيل الحساب');
       }
 
       setDeactivateUserTarget(null);
@@ -5731,26 +5735,63 @@ export function SettingsUsersPage(): React.ReactElement {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteUserTarget) return;
-    setIsDeletingUser(true);
+  const handleActivate = async (user: UserItem) => {
+    setError(null);
     try {
       const token = await window.api.secureStorage.getItem('accessToken');
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/users/${deleteUserTarget.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`${apiUrl}/users/${user.id}/activate`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to delete user');
+        throw new Error('Failed to activate user / فشل إعادة تنشيط الحساب');
       }
 
-      setDeleteUserTarget(null);
       loadUsersData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUserTarget) return;
+    const target = deleteUserTarget;
+
+    if (target.iqamaId === currentUserIqama) {
+      setError(
+        isRtl
+          ? 'لا يمكنك حذف حسابك الإداري الحالي أثناء تسجيل الدخول به.'
+          : 'You cannot delete your own active administrator account while logged in.'
+      );
+      setDeleteUserTarget(null);
+      return;
+    }
+
+    setIsDeletingUser(true);
+    setError(null);
+    try {
+      const token = await window.api.secureStorage.getItem('accessToken');
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/users/${target.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || (isRtl ? 'فشل حذف المستخدم من قاعدة البيانات' : 'Failed to delete user from database'));
+      }
+
+      // Optimistically remove from state immediately
+      setUsers((prev) => prev.filter((u) => u.id !== target.id));
+      setDeleteUserTarget(null);
+      await loadUsersData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -5812,10 +5853,61 @@ export function SettingsUsersPage(): React.ReactElement {
           </div>
         )}
 
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-2 border-b border-border pb-3">
+          <button
+            type="button"
+            onClick={() => setFilterTab('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filterTab === 'all'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-muted/40 text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {isRtl ? `جميع الحسابات (${users.length})` : `All Accounts (${users.length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('active')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filterTab === 'active'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-muted/40 text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {isRtl ? `النشطة فقط (${users.filter((u) => u.isActive).length})` : `Active (${users.filter((u) => u.isActive).length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('inactive')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filterTab === 'inactive'
+                ? 'bg-destructive/80 text-white shadow-sm'
+                : 'bg-muted/40 text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {isRtl ? `المعطلة (${users.filter((u) => !u.isActive).length})` : `Inactive (${users.filter((u) => !u.isActive).length})`}
+          </button>
+        </div>
+
         {/* Users Table */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : users.filter((u) => {
+            if (filterTab === 'active') return u.isActive;
+            if (filterTab === 'inactive') return !u.isActive;
+            return true;
+          }).length === 0 ? (
+          <div className="border border-border border-dashed p-10 text-center rounded-xl bg-card shadow-sm flex flex-col items-center justify-center space-y-2">
+            <span className="text-2xl">👥</span>
+            <h4 className="font-bold text-sm text-foreground">
+              {isRtl ? 'لا يوجد مستخدمين لعرضهم' : 'No users to display'}
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              {isRtl ? 'لم يتم العثور على حسابات مطابقة للتصفية المحددة.' : 'No user accounts match the current filter.'}
+            </p>
           </div>
         ) : (
           <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
@@ -5832,7 +5924,13 @@ export function SettingsUsersPage(): React.ReactElement {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {users.map((user) => (
+                {users
+                  .filter((u) => {
+                    if (filterTab === 'active') return u.isActive;
+                    if (filterTab === 'inactive') return !u.isActive;
+                    return true;
+                  })
+                  .map((user) => (
                   <tr key={user.id} className="hover:bg-muted/10 transition-all">
                     <td className="px-6 py-4 font-bold text-foreground">{user.fullName}</td>
                     <td className="px-6 py-4 text-muted-foreground font-mono">{maskIqamaId(user.iqamaId)}</td>
@@ -5873,24 +5971,32 @@ export function SettingsUsersPage(): React.ReactElement {
                             setEditIsActive(user.isActive);
                             setEditOpen(true);
                           }}
-                          className="p-1 bg-secondary text-secondary-foreground border border-border rounded shadow-sm hover:bg-accent text-xs transition-all"
-                          title={isRtl ? 'تعديل' : 'Edit User'}
+                          className="p-1.5 bg-secondary text-secondary-foreground border border-border rounded shadow-sm hover:bg-accent text-xs transition-all"
+                          title={isRtl ? 'تعديل البيانات' : 'Edit User'}
                         >
                           ✎
                         </button>
-                        {user.isActive && (
+                        {user.isActive ? (
                           <button
                             onClick={() => setDeactivateUserTarget(user)}
-                            className="p-1 bg-destructive/10 text-destructive border border-destructive/20 rounded shadow-sm hover:bg-destructive/20 text-xs transition-all"
-                            title={isRtl ? 'إلغاء التنشيط' : 'Deactivate Account'}
+                            className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded shadow-sm hover:bg-amber-500/20 text-xs transition-all font-bold"
+                            title={isRtl ? 'تعطيل الحساب مؤقتاً' : 'Deactivate Account'}
                           >
                             ✕
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleActivate(user)}
+                            className="p-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded shadow-sm hover:bg-emerald-500/20 text-xs transition-all font-bold"
+                            title={isRtl ? 'إعادة تنشيط الحساب' : 'Reactivate Account'}
+                          >
+                            ✓
                           </button>
                         )}
                         <button
                           onClick={() => setDeleteUserTarget(user)}
-                          className="p-1 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded shadow-sm hover:bg-red-500/20 text-xs transition-all"
-                          title={isRtl ? 'حذف الحساب نهائياً' : 'Delete User Permanently'}
+                          className="p-1.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded shadow-sm hover:bg-red-500/20 text-xs transition-all"
+                          title={isRtl ? 'حذف الحساب نهائياً من قاعدة البيانات' : 'Delete User Permanently'}
                         >
                           🗑
                         </button>
@@ -6108,7 +6214,7 @@ export function SettingsUsersPage(): React.ReactElement {
         <ConfirmModal
           isOpen={!!deleteUserTarget}
           title={isRtl ? 'تحذير حذف حساب المستخدم نهائياً' : 'Warning: Delete User Account Permanently'}
-          message={isRtl ? `سيتم حذف حساب "${deleteUserTarget?.fullName}" نهائياً من قاعدة البيانات ولن يمكن استعادته.` : `The user account for "${deleteUserTarget?.fullName}" will be permanently removed.`}
+          message={isRtl ? `سيتم حذف حساب "${deleteUserTarget?.fullName}" (${deleteUserTarget?.iqamaId}) نهائياً وبشكل كامل من قاعدة البيانات، ولن يظهر بعد الآن حتى عند تحديث الصفحة أو تسجيل الدخول مجدداً.` : `The user account for "${deleteUserTarget?.fullName}" will be permanently removed from the database and will not appear again even after page refresh.`}
           itemName={deleteUserTarget?.fullName}
           itemBadge={deleteUserTarget?.role}
           description={deleteUserTarget?.iqamaId}

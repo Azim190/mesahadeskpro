@@ -11,6 +11,7 @@ import {
   UseGuards,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService, DbUser } from '../db/db.service';
@@ -151,9 +152,24 @@ export class UsersController {
     return { success: true };
   }
 
+  @Patch(':id/activate')
+  async activateUser(@Req() req: RequestWithUser, @Param('id') id: string) {
+    this.checkAdmin(req);
+    const updated = await this.dbService.updateUser(id, { isActive: true });
+    if (!updated) {
+      throw new NotFoundException('User not found / المستخدم غير موجود');
+    }
+    return { success: true };
+  }
+
   @Delete(':id')
   async deleteUser(@Req() req: RequestWithUser, @Param('id') id: string) {
     this.checkAdmin(req);
+    if (req.user?.sub === id) {
+      throw new BadRequestException(
+        'You cannot delete your own active administrator account / لا يمكنك حذف حسابك الإداري الحالي أثناء تسجيل الدخول به',
+      );
+    }
     const deleted = await this.dbService.deleteUser(id);
     if (!deleted) {
       throw new NotFoundException('User not found / المستخدم غير موجود');

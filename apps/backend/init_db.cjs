@@ -122,27 +122,37 @@ async function initPostgres(url) {
     await pool.query(`INSERT INTO roles (id, tenant_id, name, permissions) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`, [managerRoleId, tenantId, 'DepartmentManager', JSON.stringify({ manageUsers: false, viewAll: true, editAll: true })]);
     await pool.query(`INSERT INTO roles (id, tenant_id, name, permissions) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`, [staffRoleId, tenantId, 'Staff', JSON.stringify({ manageUsers: false, viewAll: true, editAll: false })]);
 
-    // Seed default users if not existing
-    const passwordHash = bcrypt.hashSync('Password123', 10);
-    await pool.query(
-      `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-       ON CONFLICT (iqama_id) DO NOTHING`,
-      ['ad111111-1111-1111-1111-111111111111', tenantId, 'Admin User', 'maxpro190@gmail.com', '0500000001', passwordHash, adminRoleId]
-    );
-    await pool.query(
-      `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-       ON CONFLICT (iqama_id) DO NOTHING`,
-      ['ba222222-2222-2222-2222-222222222222', tenantId, 'Manager User', 'manager@masahadesk.com', '0500000002', passwordHash, managerRoleId]
-    );
-    await pool.query(
-      `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, true)
-       ON CONFLICT (iqama_id) DO NOTHING`,
-      ['ca333333-3333-3333-3333-333333333333', tenantId, 'Staff Surveyor', 'staff@masahadesk.com', '0500000003', passwordHash, staffRoleId]
-    );
-    console.log('✅ Default users verified/seeded in PostgreSQL (Password: Password123)');
+    await pool.query(`CREATE TABLE IF NOT EXISTS db_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
+
+    const metaRes = await pool.query("SELECT value FROM db_metadata WHERE key = 'seed_completed'");
+    const isSeedCompleted = metaRes.rows.length > 0 && metaRes.rows[0]?.value === 'true';
+
+    if (!isSeedCompleted) {
+      // Seed default users if not existing
+      const passwordHash = bcrypt.hashSync('Password123', 10);
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+         ON CONFLICT (iqama_id) DO NOTHING`,
+        ['ad111111-1111-1111-1111-111111111111', tenantId, 'Admin User', 'maxpro190@gmail.com', '0500000001', passwordHash, adminRoleId]
+      );
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+         ON CONFLICT (iqama_id) DO NOTHING`,
+        ['ba222222-2222-2222-2222-222222222222', tenantId, 'Manager User', 'manager@masahadesk.com', '0500000002', passwordHash, managerRoleId]
+      );
+      await pool.query(
+        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+         ON CONFLICT (iqama_id) DO NOTHING`,
+        ['ca333333-3333-3333-3333-333333333333', tenantId, 'Staff Surveyor', 'staff@masahadesk.com', '0500000003', passwordHash, staffRoleId]
+      );
+      await pool.query("INSERT INTO db_metadata (key, value) VALUES ('seed_completed', 'true') ON CONFLICT (key) DO UPDATE SET value = 'true'");
+      console.log('✅ Default users verified/seeded in PostgreSQL (Password: Password123)');
+    } else {
+      console.log('ℹ️ Database already initialized previously; preserved existing/deleted user states.');
+    }
 
     const countRes = await pool.query('SELECT count(*) as count FROM users');
     console.log(`📊 PostgreSQL Database Ready! Total Users: ${countRes.rows[0]?.count}`);
@@ -280,25 +290,34 @@ function initSqlite() {
   insertRole.run(managerRoleId, tenantId, 'DepartmentManager', JSON.stringify({ manageUsers: false, viewAll: true, editAll: true }));
   insertRole.run(staffRoleId, tenantId, 'Staff', JSON.stringify({ manageUsers: false, viewAll: true, editAll: false }));
 
-  // Seed users if empty
-  const userCount = db.prepare('SELECT count(*) as count FROM users').get();
-  if (userCount.count === 0) {
-    const passwordHash = bcrypt.hashSync('Password123', 10);
-    const now = new Date().toISOString();
+  db.exec('CREATE TABLE IF NOT EXISTS db_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);');
+  const metaRow = db.prepare("SELECT value FROM db_metadata WHERE key = 'seed_completed'").get();
+  const isSeedCompleted = metaRow && metaRow.value === 'true';
 
-    const insertUser = db.prepare(`
-      INSERT INTO users (id, tenantId, fullName, iqamaId, phoneNumber, passwordHash, roleId, isActive, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-    `);
+  // Seed users only if database has never been seeded before
+  if (!isSeedCompleted) {
+    const userCount = db.prepare('SELECT count(*) as count FROM users').get();
+    if (userCount.count === 0) {
+      const passwordHash = bcrypt.hashSync('Password123', 10);
+      const now = new Date().toISOString();
 
-    insertUser.run('ad111111-1111-1111-1111-111111111111', tenantId, 'Admin User', 'maxpro190@gmail.com', '0500000001', passwordHash, adminRoleId, now, now);
-    insertUser.run('ma222222-2222-2222-2222-222222222222', tenantId, 'Manager User', 'manager@masahadesk.com', '0500000002', passwordHash, managerRoleId, now, now);
-    insertUser.run('st333333-3333-3333-3333-333333333333', tenantId, 'Staff Surveyor', 'staff@masahadesk.com', '0500000003', passwordHash, staffRoleId, now, now);
+      const insertUser = db.prepare(`
+        INSERT INTO users (id, tenantId, fullName, iqamaId, phoneNumber, passwordHash, roleId, isActive, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `);
 
-    console.log('✅ Seeded default accounts:');
-    console.log('   - Admin: maxpro190@gmail.com / Password: Password123');
-    console.log('   - Manager: manager@masahadesk.com / Password: Password123');
-    console.log('   - Staff: staff@masahadesk.com / Password: Password123');
+      insertUser.run('ad111111-1111-1111-1111-111111111111', tenantId, 'Admin User', 'maxpro190@gmail.com', '0500000001', passwordHash, adminRoleId, now, now);
+      insertUser.run('ba222222-2222-2222-2222-222222222222', tenantId, 'Manager User', 'manager@masahadesk.com', '0500000002', passwordHash, managerRoleId, now, now);
+      insertUser.run('ca333333-3333-3333-3333-333333333333', tenantId, 'Staff Surveyor', 'staff@masahadesk.com', '0500000003', passwordHash, staffRoleId, now, now);
+
+      console.log('✅ Seeded default accounts:');
+      console.log('   - Admin: maxpro190@gmail.com / Password: Password123');
+      console.log('   - Manager: manager@masahadesk.com / Password: Password123');
+      console.log('   - Staff: staff@masahadesk.com / Password: Password123');
+    }
+    db.prepare("INSERT OR REPLACE INTO db_metadata (key, value) VALUES ('seed_completed', 'true')").run();
+  } else {
+    console.log('ℹ️ SQLite database already initialized; preserved existing/deleted users.');
   }
 
   const users = db.prepare('SELECT id, fullName, iqamaId, phoneNumber, roleId FROM users').all();

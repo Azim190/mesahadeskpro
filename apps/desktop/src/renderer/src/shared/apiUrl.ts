@@ -10,17 +10,19 @@ export const getApiUrl = (): string => {
     // ignore
   }
 
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
-  }
-
+  // If accessed in browser from another device or domain (e.g. http://192.168.x.x:3000 or railway)
   if (
     typeof window !== 'undefined' &&
     window.location &&
     window.location.origin &&
-    window.location.origin.startsWith('http')
+    window.location.origin.startsWith('http') &&
+    !window.location.origin.includes(':5173')
   ) {
     return window.location.origin.replace(/\/+$/, '');
+  }
+
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
   }
 
   return 'http://localhost:3000';

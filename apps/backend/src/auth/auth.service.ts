@@ -97,8 +97,8 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwt.sign({ sub: user.id }, { expiresIn: '7d' });
+    const accessToken = this.jwt.sign(payload, { expiresIn: '30d' });
+    const refreshToken = this.jwt.sign({ sub: user.id }, { expiresIn: '90d' });
 
     // Log to Audit Log
     await this.db.createAuditLog({
@@ -162,8 +162,8 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwt.sign({ sub: user.id }, { expiresIn: '7d' });
+    const accessToken = this.jwt.sign(payload, { expiresIn: '30d' });
+    const refreshToken = this.jwt.sign({ sub: user.id }, { expiresIn: '90d' });
 
     // Log to Audit Log
     await this.db.createAuditLog({
@@ -255,7 +255,7 @@ export class AuthService {
         tenantId: user.tenantId,
       };
 
-      const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+      const accessToken = this.jwt.sign(payload, { expiresIn: '30d' });
       return { accessToken };
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token.');

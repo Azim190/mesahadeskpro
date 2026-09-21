@@ -227,6 +227,11 @@ export class DatabaseService implements OnModuleInit {
         details_json JSONB,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS db_metadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
     `);
 
     // Seed initial tenant and roles if not exists
@@ -280,61 +285,75 @@ export class DatabaseService implements OnModuleInit {
       ],
     );
 
-    // Seed default users only if users table is empty
-    const usersRes = await pool.query('SELECT count(*) as count FROM users');
-    const count = parseInt(usersRes.rows[0]?.count || '0', 10);
-    if (count === 0) {
-      const salt = bcrypt.genSaltSync(10);
-      const passwordHash = bcrypt.hashSync('Password123', salt);
+    // Check if initial seeding was already completed once. If so, NEVER re-seed deleted users!
+    const metaRes = await pool.query(
+      "SELECT value FROM db_metadata WHERE key = 'seed_completed'",
+    );
+    const isSeedCompleted =
+      metaRes.rows.length > 0 && metaRes.rows[0]?.value === 'true';
+
+    if (!isSeedCompleted) {
+      const usersRes = await pool.query('SELECT count(*) as count FROM users');
+      const count = parseInt(usersRes.rows[0]?.count || '0', 10);
+      if (count === 0) {
+        const salt = bcrypt.genSaltSync(10);
+        const passwordHash = bcrypt.hashSync('Password123', salt);
+
+        await pool.query(
+          `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          [
+            'ad111111-1111-1111-1111-111111111111',
+            tenantId,
+            'Admin User',
+            'maxpro190@gmail.com',
+            '0500000001',
+            passwordHash,
+            adminRoleId,
+          ],
+        );
+
+        await pool.query(
+          `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          [
+            'ba222222-2222-2222-2222-222222222222',
+            tenantId,
+            'Manager User',
+            'manager@masahadesk.com',
+            '0500000002',
+            passwordHash,
+            managerRoleId,
+          ],
+        );
+
+        await pool.query(
+          `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          [
+            'ca333333-3333-3333-3333-333333333333',
+            tenantId,
+            'Staff Surveyor',
+            'staff@masahadesk.com',
+            '0500000003',
+            passwordHash,
+            staffRoleId,
+          ],
+        );
+
+        this.logger.log(
+          'Seeded PostgreSQL database with initial default accounts (Password123):',
+        );
+        this.logger.log('- Admin Email: maxpro190@gmail.com');
+        this.logger.log('- Manager Email: manager@masahadesk.com');
+        this.logger.log('- Staff Email: staff@masahadesk.com');
+      }
 
       await pool.query(
-        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-        [
-          'ad111111-1111-1111-1111-111111111111',
-          tenantId,
-          'Admin User',
-          'maxpro190@gmail.com',
-          '0500000001',
-          passwordHash,
-          adminRoleId,
-        ],
+        `INSERT INTO db_metadata (key, value)
+         VALUES ('seed_completed', 'true')
+         ON CONFLICT (key) DO UPDATE SET value = 'true'`,
       );
-
-      await pool.query(
-        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-        [
-          'ba222222-2222-2222-2222-222222222222',
-          tenantId,
-          'Manager User',
-          'manager@masahadesk.com',
-          '0500000002',
-          passwordHash,
-          managerRoleId,
-        ],
-      );
-
-      await pool.query(
-        `INSERT INTO users (id, tenant_id, full_name, iqama_id, phone_number, password_hash, role_id, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-        [
-          'ca333333-3333-3333-3333-333333333333',
-          tenantId,
-          'Staff Surveyor',
-          'staff@masahadesk.com',
-          '0500000003',
-          passwordHash,
-          staffRoleId,
-        ],
-      );
-
-      this.logger.log(
-        'Seeded PostgreSQL database with initial default accounts (Password123):',
-      );
-      this.logger.log('- Admin Email: maxpro190@gmail.com');
-      this.logger.log('- Manager Email: manager@masahadesk.com');
-      this.logger.log('- Staff Email: staff@masahadesk.com');
     }
   }
 
@@ -454,6 +473,11 @@ export class DatabaseService implements OnModuleInit {
           detailsJson TEXT,
           timestamp TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS db_metadata (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
       `);
 
       // Seed initial tenant and roles if not exists
@@ -496,62 +520,75 @@ export class DatabaseService implements OnModuleInit {
         JSON.stringify({ manageUsers: false, viewAll: true, editAll: false }),
       );
 
-      // Seed initial default users only if no users exist
-      const userCountRow = this.sqliteDb
-        .prepare('SELECT COUNT(*) as count FROM users')
-        .get() as { count: number };
-      if (!userCountRow || userCountRow.count === 0) {
-        const salt = bcrypt.genSaltSync(10);
-        const passwordHash = bcrypt.hashSync('Password123', salt);
-        const now = new Date().toISOString();
+      // Check if SQLite database was already seeded. If so, NEVER re-seed deleted users!
+      const metaRow = this.sqliteDb
+        .prepare("SELECT value FROM db_metadata WHERE key = 'seed_completed'")
+        .get() as { value: string } | undefined;
+      const isSeedCompleted = metaRow && metaRow.value === 'true';
 
-        const insertUser = this.sqliteDb.prepare(`
-          INSERT INTO users (id, tenantId, fullName, iqamaId, phoneNumber, passwordHash, roleId, isActive, createdAt, updatedAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-        `);
+      if (!isSeedCompleted) {
+        const userCountRow = this.sqliteDb
+          .prepare('SELECT COUNT(*) as count FROM users')
+          .get() as { count: number };
+        if (!userCountRow || userCountRow.count === 0) {
+          const salt = bcrypt.genSaltSync(10);
+          const passwordHash = bcrypt.hashSync('Password123', salt);
+          const now = new Date().toISOString();
 
-        insertUser.run(
-          'ad111111-1111-1111-1111-111111111111',
-          tenantId,
-          'Admin User',
-          'maxpro190@gmail.com',
-          '0500000001',
-          passwordHash,
-          adminRoleId,
-          now,
-          now,
-        );
+          const insertUser = this.sqliteDb.prepare(`
+            INSERT INTO users (id, tenantId, fullName, iqamaId, phoneNumber, passwordHash, roleId, isActive, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+          `);
 
-        insertUser.run(
-          'ma222222-2222-2222-2222-222222222222',
-          tenantId,
-          'Manager User',
-          'manager@masahadesk.com',
-          '0500000002',
-          passwordHash,
-          managerRoleId,
-          now,
-          now,
-        );
+          insertUser.run(
+            'ad111111-1111-1111-1111-111111111111',
+            tenantId,
+            'Admin User',
+            'maxpro190@gmail.com',
+            '0500000001',
+            passwordHash,
+            adminRoleId,
+            now,
+            now,
+          );
 
-        insertUser.run(
-          'st333333-3333-3333-3333-333333333333',
-          tenantId,
-          'Staff Surveyor',
-          'staff@masahadesk.com',
-          '0500000003',
-          passwordHash,
-          staffRoleId,
-          now,
-          now,
-        );
+          insertUser.run(
+            'ba222222-2222-2222-2222-222222222222',
+            tenantId,
+            'Manager User',
+            'manager@masahadesk.com',
+            '0500000002',
+            passwordHash,
+            managerRoleId,
+            now,
+            now,
+          );
 
-        this.logger.log(
-          'Seeded SQLite persistent database with default accounts (Password123):',
-        );
-        this.logger.log('- Admin Email: maxpro190@gmail.com');
-        this.logger.log('- Manager Email: manager@masahadesk.com');
-        this.logger.log('- Staff Email: staff@masahadesk.com');
+          insertUser.run(
+            'ca333333-3333-3333-3333-333333333333',
+            tenantId,
+            'Staff Surveyor',
+            'staff@masahadesk.com',
+            '0500000003',
+            passwordHash,
+            staffRoleId,
+            now,
+            now,
+          );
+
+          this.logger.log(
+            'Seeded SQLite persistent database with default accounts (Password123):',
+          );
+          this.logger.log('- Admin Email: maxpro190@gmail.com');
+          this.logger.log('- Manager Email: manager@masahadesk.com');
+          this.logger.log('- Staff Email: staff@masahadesk.com');
+        }
+
+        this.sqliteDb
+          .prepare(
+            "INSERT OR REPLACE INTO db_metadata (key, value) VALUES ('seed_completed', 'true')",
+          )
+          .run();
       }
 
       this.logger.log(
@@ -1375,6 +1412,23 @@ export class DatabaseService implements OnModuleInit {
 
   async deleteUser(userId: string): Promise<boolean> {
     if (this.db) {
+      try {
+        await this.db
+          .delete(schema.otpVerifications)
+          .where(eq(schema.otpVerifications.userId, userId));
+      } catch (err) {
+        this.logger.warn(`Could not delete otpVerifications for user ${userId}:`, err);
+      }
+
+      try {
+        await this.db
+          .update(schema.auditLogs)
+          .set({ userId: null })
+          .where(eq(schema.auditLogs.userId, userId));
+      } catch (err) {
+        this.logger.warn(`Could not nullify auditLogs for user ${userId}:`, err);
+      }
+
       const result = await this.db
         .delete(schema.users)
         .where(eq(schema.users.id, userId))
@@ -1383,6 +1437,22 @@ export class DatabaseService implements OnModuleInit {
     }
 
     if (this.sqliteDb) {
+      try {
+        this.sqliteDb
+          .prepare('DELETE FROM otp_verifications WHERE userId = ?')
+          .run(userId);
+      } catch {
+        // ignore
+      }
+
+      try {
+        this.sqliteDb
+          .prepare('UPDATE audit_logs SET userId = NULL WHERE userId = ?')
+          .run(userId);
+      } catch {
+        // ignore
+      }
+
       const info = this.sqliteDb
         .prepare('DELETE FROM users WHERE id = ?')
         .run(userId);
