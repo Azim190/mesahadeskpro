@@ -108,7 +108,10 @@ export class DatabaseService implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    const dbUrl = process.env.DATABASE_URL;
+    const defaultCloudDbUrl =
+      'postgresql://neondb_owner:npg_HV3z2cDktXqf@ep-rough-thunder-b4n1nq9y-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require';
+    const dbUrl = process.env.DATABASE_URL || defaultCloudDbUrl;
+
     if (
       dbUrl &&
       (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://'))
