@@ -173,12 +173,12 @@ export function ServerConnectionModal({
               <button
                 type="button"
                 onClick={() => {
-                  setInputUrl('http://192.168.1.100:3000');
+                  setInputUrl('http://192.168.1.14:3000');
                   setTestResult(null);
                 }}
                 className="px-2.5 py-1 rounded-lg bg-[#071524] hover:bg-[#193a59] border border-[#193a59] text-[#9db1c3] hover:text-[#dfceb3] transition"
               >
-                LAN (192.168.1.x)
+                {isRtl ? 'الجهاز الرئيسي (192.168.1.14)' : 'Host PC (192.168.1.14)'}
               </button>
             </div>
           </div>
@@ -233,8 +233,34 @@ export function ServerConnectionModal({
                   </div>
                 )}
                 {!testResult.ok && testResult.error && (
-                  <div className="text-[11px] opacity-80 pt-0.5">
-                    {testResult.error}
+                  <div className="space-y-2 pt-1">
+                    <div className="text-[11px] text-red-300 font-medium leading-relaxed">
+                      {testResult.error}
+                    </div>
+                    <div className="text-[11px] text-[#9db1c3] bg-[#071524]/80 p-2.5 rounded-lg border border-red-500/20 space-y-1">
+                      <div className="font-semibold text-[#dfceb3]">
+                        {isRtl ? '💡 خطوات الحل السريعة:' : '💡 Quick Troubleshooting Steps:'}
+                      </div>
+                      <ul className="list-disc list-inside space-y-1 opacity-90">
+                        {inputUrl.includes('localhost') && (
+                          <li className="text-amber-300 font-semibold">
+                            {isRtl
+                              ? 'أنت تستخدم localhost في جهاز آخر! اضغط على زر "الجهاز الرئيسي (192.168.1.14)" أعلاه أو اكتب عنوان IP الجهاز الرئيسي.'
+                              : 'You are using localhost on another device! Click "Host PC (192.168.1.14)" preset above.'}
+                          </li>
+                        )}
+                        <li>
+                          {isRtl
+                            ? 'شغّل ملف allow-network-access.bat كمسؤول (Run as administrator) على الجهاز الرئيسي لفتح المنفذ 3000 في جدار الحماية.'
+                            : 'Run allow-network-access.bat as administrator on the host PC to allow port 3000.'}
+                        </li>
+                        <li>
+                          {isRtl
+                            ? 'تأكد من أن كلا الجهازين متصلان بنفس شبكة الواي فاي (Wi-Fi).'
+                            : 'Ensure both devices are on the exact same Wi-Fi network.'}
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>

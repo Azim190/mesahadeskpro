@@ -65,7 +65,9 @@ export const checkServerHealth = async (urlToCheck?: string): Promise<HealthChec
   const startTime = Date.now();
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 8000);
     const response = await fetch(`${targetUrl}/health`, {
       signal: controller.signal,
     });
@@ -83,7 +85,21 @@ export const checkServerHealth = async (urlToCheck?: string): Promise<HealthChec
     };
   } catch (err: unknown) {
     const latencyMs = Date.now() - startTime;
-    const msg = err instanceof Error ? err.message : 'Connection failed';
+    let msg = 'تعذر الاتصال بالخادم';
+    const rawMsg = err instanceof Error ? err.message : String(err || '');
+    if (
+      (err as { name?: string })?.name === 'AbortError' ||
+      rawMsg.toLowerCase().includes('abort') ||
+      rawMsg.toLowerCase().includes('timeout')
+    ) {
+      msg =
+        'انتهت مهلة الاتصال (8 ثوانٍ). تأكد من إدخال IP الجهاز الرئيسي بشكل صحيح، وأن الخادم يعمل ومسموح به في جدار الحماية (Firewall).';
+    } else if (rawMsg.includes('Failed to fetch') || rawMsg.includes('NetworkError')) {
+      msg =
+        'فشل الاتصال بالشبكة (Network Error). تحقق من اتصال الجهازين بنفس شبكة Wi-Fi وصحة رقم المنفذ 3000.';
+    } else if (err instanceof Error) {
+      msg = err.message;
+    }
     return { ok: false, latencyMs, error: msg };
   }
 };
