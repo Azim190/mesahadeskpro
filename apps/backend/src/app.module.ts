@@ -25,7 +25,14 @@ const targetStaticPath = candidateStaticPaths.find((p) => existsSync(p)) || cand
     UsersModule,
     ServeStaticModule.forRoot({
       rootPath: targetStaticPath,
-      exclude: ['/api/(.*)'],
+      exclude: [
+        '/api/*path',
+        '/auth/*path',
+        '/users/*path',
+        '/sync/*path',
+        '/health',
+        '/attachments/*path',
+      ],
     }),
   ],
   controllers: [AppController],
