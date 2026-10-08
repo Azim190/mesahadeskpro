@@ -173,12 +173,12 @@ export function ServerConnectionModal({
               <button
                 type="button"
                 onClick={() => {
-                  setInputUrl('http://192.168.1.14:3000');
+                  setInputUrl('http://192.168.1.48:3000');
                   setTestResult(null);
                 }}
                 className="px-2.5 py-1 rounded-lg bg-[#071524] hover:bg-[#193a59] border border-[#193a59] text-[#9db1c3] hover:text-[#dfceb3] transition"
               >
-                {isRtl ? 'الجهاز الرئيسي (192.168.1.14)' : 'Host PC (192.168.1.14)'}
+                {isRtl ? 'الجهاز الرئيسي (192.168.1.48)' : 'Host PC (192.168.1.48)'}
               </button>
             </div>
           </div>
@@ -245,14 +245,14 @@ export function ServerConnectionModal({
                         {inputUrl.includes('localhost') && (
                           <li className="text-amber-300 font-semibold">
                             {isRtl
-                              ? 'أنت تستخدم localhost في جهاز آخر! اضغط على زر "الجهاز الرئيسي (192.168.1.14)" أعلاه أو اكتب عنوان IP الجهاز الرئيسي.'
-                              : 'You are using localhost on another device! Click "Host PC (192.168.1.14)" preset above.'}
+                              ? 'أنت تستخدم localhost في جهاز آخر! اضغط على زر "الجهاز الرئيسي (192.168.1.48)" أعلاه أو اكتب عنوان IP الجهاز الرئيسي.'
+                              : 'You are using localhost on another device! Click "Host PC (192.168.1.48)" preset above.'}
                           </li>
                         )}
                         <li>
                           {isRtl
-                            ? 'شغّل ملف allow-network-access.bat كمسؤول (Run as administrator) على الجهاز الرئيسي لفتح المنفذ 3000 في جدار الحماية.'
-                            : 'Run allow-network-access.bat as administrator on the host PC to allow port 3000.'}
+                            ? 'شغّل ملف open-firewall-port-3000.bat كمسؤول (Run as administrator) على الجهاز الرئيسي لفتح المنفذ 3000 في جدار الحماية.'
+                            : 'Run open-firewall-port-3000.bat as administrator on the host PC to allow port 3000.'}
                         </li>
                         <li>
                           {isRtl
